@@ -392,12 +392,14 @@ function App() {
         {activeTab === 'pricing' && (
           <div>
             {showPayment ? (
-              <Payment
-                selectedPlan={selectedPlan!}
-                onPaymentSuccess={handlePaymentSuccess}
-                onCancel={handlePaymentCancel}
-                isLoading={isPaymentLoading}
-              />
+              <div className="max-w-2xl mx-auto">
+                <StripePayment
+                  selectedPlan={selectedPlan!}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onCancel={handlePaymentCancel}
+                  isLoading={isPaymentLoading}
+                />
+              </div>
             ) : (
               <Pricing
                 onSelectPlan={handleSelectPlan}
