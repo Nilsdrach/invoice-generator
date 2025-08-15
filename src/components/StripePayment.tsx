@@ -88,8 +88,7 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
     setProcessing(true);
 
     try {
-      // Echte Stripe-Integration mit Backend-API
-      let clientSecret;
+      // Stripe-Integration über Netlify Functions
       
       if (selectedPlan === 'single') {
         // Einmalzahlung: Payment Intent erstellen
@@ -111,7 +110,33 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         }
         
         const data = await response.json();
-        clientSecret = data.clientSecret;
+        const clientSecret = data.clientSecret;
+        
+        // Stripe Payment bestätigen
+        let result;
+        if (paymentMethod === 'card') {
+          result = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: elements.getElement(CardElement)!,
+              billing_details: {
+                name,
+                email,
+              },
+            }
+          });
+        } else {
+          result = await stripe.confirmPayment({
+            elements,
+            clientSecret,
+            confirmParams: {
+              return_url: window.location.origin + '/success',
+            },
+          });
+        }
+
+        if (result?.error) {
+          throw new Error(result.error.message);
+        }
         
       } else {
         // Abonnement: Subscription erstellen
@@ -133,52 +158,33 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         }
         
         const data = await response.json();
-        clientSecret = data.clientSecret;
-      }
-
-      // Stripe Payment bestätigen
-      let result;
-      if (paymentMethod === 'card') {
-        result = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: elements.getElement(CardElement)!,
-            billing_details: {
-              name,
-              email,
+        const clientSecret = data.clientSecret;
+        
+        // Stripe Payment bestätigen
+        let result;
+        if (paymentMethod === 'card') {
+          result = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: elements.getElement(CardElement)!,
+              billing_details: {
+                name,
+                email,
+              },
+            }
+          });
+        } else {
+          result = await stripe.confirmPayment({
+            elements,
+            clientSecret,
+            confirmParams: {
+              return_url: window.location.origin + '/success',
             },
-          }
-        });
-      } else if (paymentMethod === 'paypal') {
-        // PayPal wird über Stripe automatisch verarbeitet
-        result = await stripe.confirmPayment({
-          elements,
-          clientSecret,
-          confirmParams: {
-            return_url: window.location.origin + '/success',
-          },
-        });
-      } else if (paymentMethod === 'applepay' || paymentMethod === 'googlepay') {
-        // Apple Pay / Google Pay
-        result = await stripe.confirmPayment({
-          elements,
-          clientSecret,
-          confirmParams: {
-            return_url: window.location.origin + '/success',
-          },
-        });
-      } else if (paymentMethod === 'sepa') {
-        // SEPA Banküberweisung
-        result = await stripe.confirmPayment({
-          elements,
-          clientSecret,
-          confirmParams: {
-            return_url: window.location.origin + '/success',
-          },
-        });
-      }
+          });
+        }
 
-      if (result?.error) {
-        throw new Error(result.error.message);
+        if (result?.error) {
+          throw new Error(result.error.message);
+        }
       }
 
       console.log('Zahlung erfolgreich!');
