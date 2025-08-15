@@ -33,7 +33,7 @@ export const LogoUpload: React.FC<LogoUploadProps> = ({ logo, onLogoChange }) =>
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       <label className="block text-sm font-medium text-gray-700">
         Firmenlogo
       </label>
@@ -43,22 +43,22 @@ export const LogoUpload: React.FC<LogoUploadProps> = ({ logo, onLogoChange }) =>
           <img
             src={logo}
             alt="Firmenlogo"
-            className="w-24 h-24 object-contain border border-gray-300 rounded-lg bg-white"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-contain border border-gray-300 rounded-lg bg-white"
           />
           <button
             onClick={handleRemoveLogo}
-            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+            className="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
             title="Logo entfernen"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3 h-3 sm:w-3 sm:h-3" />
           </button>
         </div>
       ) : (
         <div
           onClick={handleClickUpload}
-          className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#9B1D20] hover:bg-gray-50 transition-colors"
+          className="w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-[#9B1D20] hover:bg-gray-50 transition-colors"
         >
-          <ImageIcon className="w-8 h-8 text-gray-400 mb-1" />
+          <ImageIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mb-1" />
           <span className="text-xs text-gray-500 text-center">Logo hochladen</span>
         </div>
       )}
@@ -74,9 +74,9 @@ export const LogoUpload: React.FC<LogoUploadProps> = ({ logo, onLogoChange }) =>
       <button
         type="button"
         onClick={handleClickUpload}
-        className="flex items-center gap-2 px-3 py-2 text-sm text-[#9B1D20] border border-[#9B1D20] rounded-md hover:bg-[#9B1D20] hover:text-white transition-colors"
+        className="flex items-center gap-2 px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-[#9B1D20] border border-[#9B1D20] rounded-md hover:bg-[#9B1D20] hover:text-white transition-colors"
       >
-        <Upload className="w-4 h-4" />
+        <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
         {logo ? 'Logo ändern' : 'Logo auswählen'}
       </button>
       
@@ -86,3 +86,4 @@ export const LogoUpload: React.FC<LogoUploadProps> = ({ logo, onLogoChange }) =>
     </div>
   );
 };
+

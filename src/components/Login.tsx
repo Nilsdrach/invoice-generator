@@ -84,9 +84,8 @@ export const Login: React.FC<LoginProps> = ({ user, onLogin, onLogout }) => {
         <LogIn className="w-4 h-4" />
         {isLoading ? 'Anmelden...' : 'Anmelden'}
       </button>
-      <div className="text-xs text-gray-500">
-        Tipp: E-Mail mit "premium" = Premium-User
-      </div>
+
     </form>
   );
 };
+

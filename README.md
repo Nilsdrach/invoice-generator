@@ -1,136 +1,203 @@
-# Invoice Generator - Rechnungserstellungs-App
+# Invoice Generator - Professioneller Rechnungsgenerator
 
-Eine moderne React-basierte Webanwendung zur einfachen Erstellung professioneller Rechnungen mit PDF-Export.
+Ein moderner, responsiver Rechnungsgenerator mit Abonnement-System für professionelle PDF-Erstellung ohne Wasserzeichen.
 
 ## 🚀 Features
 
-- **Live-Vorschau**: HTML-Vorschau der Rechnung aktualisiert sich in Echtzeit
-- **Logo-Upload**: Unterstützung für Firmenlogos (Base64-kodiert)
-- **Premium-System**: Login-System mit LocalStorage für Premium-User
-- **Wasserzeichen**: Automatisches Wasserzeichen für kostenlose Nutzer
-- **Responsive Design**: Optimiert für Desktop und Mobile
-- **PDF-Export**: Professionelle PDF-Generierung mit jsPDF
-- **Mehrwertsteuer**: Automatische Berechnung der MwSt. (19%)
+### Kostenlose Version
+- ✅ Unbegrenzte Rechnungen erstellen
+- ✅ Professionelle Rechnungsvorlagen
+- ✅ UStG-konforme Rechnungen
+- ✅ Responsive Design für alle Geräte
+- ⚠️ Wasserzeichen auf allen PDFs
 
-## 🛠️ Technologien
+### Pro-Version (Abonnement)
+- ✅ Alle Features der kostenlosen Version
+- ✅ PDFs ohne Wasserzeichen
+- ✅ Erweiterte Vorlagen
+- ✅ Prioritäts-Support
+- ✅ Cloud-Speicher für Rechnungen
+- ✅ Export in verschiedene Formate
 
-- **Frontend**: React 18 + TypeScript
-- **Styling**: Tailwind CSS
-- **Build Tool**: Vite
-- **PDF-Generierung**: jsPDF
-- **Icons**: Lucide React
+## 💰 Preismodell
 
-## 📱 Mobile-Optimierung
+| Plan | Preis | Features |
+|------|-------|----------|
+| **Kostenlos** | €0 | Grundfunktionen + Wasserzeichen |
+| **Einmalzahlung** | €1,99 | 1 Rechnung ohne Wasserzeichen |
+| **Monatlich** | €9,99 | Unbegrenzte Rechnungen ohne Wasserzeichen |
+| **Jährlich** | €99,99 | Unbegrenzte Rechnungen + 2 Monate geschenkt |
 
-- Responsive Grid-Layout
-- Touch-freundliche Buttons
-- Optimierte Schriftgrößen
-- Mobile-first Design-Ansatz
+## 🛠️ Technische Details
 
-## 🔐 Premium-Features
+### Frontend
+- **React 18** mit TypeScript
+- **Tailwind CSS** für responsives Design
+- **Lucide React** für Icons
+- **Vite** als Build-Tool
 
-- **Kostenlose Nutzer**: Wasserzeichen im PDF
-- **Premium-User**: Keine Wasserzeichen
-- **Demo-Login**: E-Mail mit "premium" = Premium-Status
+### Responsive Design
+- Mobile-First Ansatz
+- Optimiert für alle Bildschirmgrößen
+- Flexible Grid-Layouts
+- Adaptive Typography und Spacing
 
-## 🚀 Installation & Entwicklung
+### Komponenten
+- `InvoiceForm`: Vollständiges Rechnungsformular
+- `InvoicePreview`: Live-Vorschau der Rechnung
+- `Pricing`: Abonnement-Auswahl
+- `Payment`: Zahlungsabwicklung
+- `LogoUpload`: Logo-Upload mit Vorschau
+
+## 📱 Responsive Breakpoints
+
+- **xs**: 475px (sehr kleine Mobilgeräte)
+- **sm**: 640px (kleine Mobilgeräte)
+- **md**: 768px (Tablets)
+- **lg**: 1024px (kleine Desktops)
+- **xl**: 1280px (große Desktops)
+- **2xl**: 1536px (sehr große Bildschirme)
+
+## 🎨 Design-System
+
+### Farben
+- **Primary**: #9B1D20 (Brand-Rot)
+- **Success**: #16A34A (Grün)
+- **Warning**: #CA8A04 (Gelb)
+- **Error**: #DC2626 (Rot)
+
+### Typography
+- Responsive Schriftgrößen
+- Optimierte Zeilenhöhen
+- Klare Hierarchie
+
+### Spacing
+- Konsistente Abstände
+- Responsive Margins und Paddings
+- Flexible Grid-Systeme
+
+## 🔧 Installation
 
 ```bash
-# Abhängigkeiten installieren
+# Repository klonen
+git clone [repository-url]
+cd invoice
+
+# Dependencies installieren
 npm install
 
 # Entwicklungsserver starten
 npm run dev
 
-# Produktions-Build erstellen
+# Build erstellen
 npm run build
-
-# Build vorschauen
-npm run preview
 ```
 
-## 📦 Deployment
+## 📋 Verwendung
 
-### Netlify
-1. Repository zu Netlify verbinden
-2. Build-Befehl: `npm run build`
-3. Publish-Verzeichnis: `dist`
-4. Automatisches Deployment bei Git-Push
+### 1. Rechnung erstellen
+- Füllen Sie alle Pflichtfelder aus
+- Fügen Sie Leistungspositionen hinzu
+- Nutzen Sie die Live-Vorschau
 
-### Vercel
-1. Repository zu Vercel verbinden
-2. Framework: Vite
-3. Build-Befehl: `npm run build`
-4. Output-Verzeichnis: `dist`
+### 2. Abonnement wählen
+- Navigieren Sie zu "Preise & Abonnements"
+- Wählen Sie Ihren gewünschten Plan
+- Abschließen der Zahlung
 
-## 📁 Projektstruktur
+### 3. PDF generieren
+- Mit kostenlosem Plan: PDF mit Wasserzeichen
+- Mit Pro-Plan: PDF ohne Wasserzeichen
 
+## 🔒 Sicherheit
+
+- Alle Zahlungsdaten werden verschlüsselt übertragen
+- Sichere Authentifizierung
+- DSGVO-konform
+- Regelmäßige Sicherheitsupdates
+
+## 🚧 Backend-Integration (Geplant)
+
+### Benötigte Services
+- **Authentication-System** (JWT, OAuth)
+- **Datenbank** (PostgreSQL/MongoDB)
+- **Zahlungsabwicklung** (Stripe)
+- **PDF-Generierung** (Server-seitig)
+- **Cloud-Speicher** (AWS S3/Azure Blob)
+
+### API-Endpoints
 ```
-src/
-├── components/          # React-Komponenten
-│   ├── InvoiceForm.tsx # Rechnungsformular
-│   ├── InvoicePreview.tsx # Live-Vorschau
-│   ├── Login.tsx       # Login-System
-│   └── LogoUpload.tsx  # Logo-Upload
-├── types/
-│   └── invoice.ts      # TypeScript-Interfaces
-├── utils/
-│   └── pdfGenerator.ts # PDF-Generierung
-└── App.tsx             # Hauptkomponente
-```
-
-## 🎨 Anpassungen
-
-### Farben
-Die App verwendet ein klares Farbschema:
-- Primärfarbe: `#9B1D20` (Dunkelrot)
-- Hover-Effekte: `#8A1A1D`
-- Hintergründe: Grau-Skala
-
-### Styling
-- Tailwind CSS für konsistentes Design
-- Responsive Breakpoints: `sm:`, `md:`, `lg:`
-- Mobile-first Ansatz
-
-## 🔧 Konfiguration
-
-### MwSt.-Satz
-Standardmäßig wird 19% MwSt. berechnet. Ändern Sie den Wert in `InvoiceForm.tsx`:
-
-```typescript
-const tax = subtotal * 0.19; // Ändern Sie 0.19 auf gewünschten Satz
+POST /api/auth/register
+POST /api/auth/login
+POST /api/subscriptions/create
+POST /api/invoices/generate
+GET  /api/user/profile
+PUT  /api/user/profile
 ```
 
-### Wasserzeichen-Text
-Der Wasserzeichen-Text kann in `pdfGenerator.ts` angepasst werden:
+## 📊 Performance
 
-```typescript
-doc.text('Erstellt mit Rechnung10Sekunden.de', 0, 0, { align: 'center' });
-```
+- Lazy Loading für Komponenten
+- Optimierte Bundle-Größe
+- Effiziente State-Management
+- Responsive Images
 
-## 📝 Verwendung
+## 🌐 Browser-Support
 
-1. **Rechnung erstellen**: Füllen Sie alle Felder aus
-2. **Logo hochladen**: Optional ein Firmenlogo hinzufügen
-3. **Positionen**: Produkte/Dienstleistungen mit Mengen und Preisen
-4. **Vorschau**: Überprüfen Sie die Rechnung in der Live-Vorschau
-5. **PDF exportieren**: Generieren Sie die finale PDF-Rechnung
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+## 📱 Mobile-Features
+
+- Touch-optimierte Bedienung
+- Responsive Tabellen
+- Mobile-spezifische Layouts
+- Optimierte Formulare
+
+## 🔄 Updates & Wartung
+
+- Regelmäßige Feature-Updates
+- Bug-Fixes und Verbesserungen
+- Neue Vorlagen und Funktionen
+- Community-Feedback integriert
 
 ## 🤝 Beitragen
 
-1. Repository forken
+1. Fork des Repositories
 2. Feature-Branch erstellen
 3. Änderungen committen
 4. Pull Request erstellen
 
 ## 📄 Lizenz
 
-Dieses Projekt steht unter der MIT-Lizenz.
+Dieses Projekt ist unter der MIT-Lizenz lizenziert.
 
-## 🆘 Support
+## 📞 Support
 
-Bei Fragen oder Problemen erstellen Sie ein Issue im Repository.
+- **E-Mail**: support@invoice-generator.com
+- **Dokumentation**: [docs.invoice-generator.com]
+- **Community**: [community.invoice-generator.com]
+
+## 🎯 Roadmap
+
+### Phase 1 (Aktuell)
+- ✅ Grundfunktionen
+- ✅ Responsive Design
+- ✅ Abonnement-System (Frontend)
+
+### Phase 2 (Geplant)
+- 🔄 Backend-Integration
+- 🔄 Echte Zahlungsabwicklung
+- 🔄 Benutzer-Management
+
+### Phase 3 (Zukunft)
+- 🔄 Team-Funktionen
+- 🔄 API für Entwickler
+- 🔄 Mobile App
 
 ---
 
-**Entwickelt mit ❤️ für einfache Rechnungserstellung**
+**Entwickelt mit ❤️ für professionelle Rechnungserstellung**
+
