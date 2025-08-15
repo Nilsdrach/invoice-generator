@@ -18,7 +18,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { email, name, planId } = JSON.parse(event.body);
+    const { email, name, planId, paymentMethod = 'card' } = JSON.parse(event.body);
     
     // Kunde erstellen oder finden
     let customer;
@@ -34,7 +34,8 @@ exports.handler = async (event, context) => {
         email,
         name,
         metadata: {
-          planId
+          planId,
+          paymentMethod
         }
       });
     }
@@ -47,12 +48,33 @@ exports.handler = async (event, context) => {
       priceId = process.env.STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder';
     }
 
+    // Payment method types basierend auf Auswahl
+    let paymentMethodTypes = ['card'];
+    
+    switch (paymentMethod) {
+      case 'paypal':
+        paymentMethodTypes = ['paypal'];
+        break;
+      case 'applepay':
+        paymentMethodTypes = ['card', 'apple_pay'];
+        break;
+      case 'googlepay':
+        paymentMethodTypes = ['card', 'google_pay'];
+        break;
+      case 'sepa':
+        paymentMethodTypes = ['sepa_debit'];
+        break;
+      default:
+        paymentMethodTypes = ['card'];
+    }
+
     // Abonnement erstellen
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
+      payment_method_types: paymentMethodTypes,
       expand: ['latest_invoice.payment_intent'],
     });
 

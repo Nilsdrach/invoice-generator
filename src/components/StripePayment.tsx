@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { SubscriptionPlan, PricingPlan, getPlanById } from '../types/subscription';
-import { CreditCard, Lock, Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Lock, Shield, CheckCircle, AlertCircle, Loader2, CreditCard as PayPalIcon, Smartphone, Building2 } from 'lucide-react';
 
 // Stripe-Konfiguration
 const stripePromise = loadStripe('pk_test_51RwQ40BdLY4NC8JCYorm7BH1FbjaKA9CnDVx37qrp9U30VtCBRuczUR4njdqoJ3XE4FZb7vNFYnIVQryz8cISQK900gQoW9Ocs');
@@ -43,8 +43,10 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
 }) => {
   const stripe = useStripe();
   const elements = useElements();
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'applepay' | 'googlepay' | 'sepa'>('card');
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [iban, setIban] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [processing, setProcessing] = useState(false);
@@ -60,6 +62,16 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
     
     if (!name.trim()) newErrors.name = 'Name ist erforderlich';
     else if (name.trim().length < 2) newErrors.name = 'Name muss mindestens 2 Zeichen lang sein';
+    
+    if (paymentMethod === 'sepa' && !iban.trim()) {
+      newErrors.iban = 'IBAN ist erforderlich';
+    } else if (paymentMethod === 'sepa' && iban.trim()) {
+      // Einfache IBAN-Validierung (DE + 20 Ziffern)
+      const ibanRegex = /^DE[0-9]{20}$/;
+      if (!ibanRegex.test(iban.replace(/\s/g, '').toUpperCase())) {
+        newErrors.iban = 'Ungültige IBAN (DE + 20 Ziffern)';
+      }
+    }
     
     if (!acceptTerms) newErrors.terms = 'Sie müssen die AGB akzeptieren';
 
@@ -79,9 +91,9 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
       // Echte Stripe-Integration mit Backend-API
       let clientSecret;
       
-             if (selectedPlan === 'single') {
-         // Einmalzahlung: Payment Intent erstellen
-         const response = await fetch('/.netlify/functions/create-payment-intent', {
+      if (selectedPlan === 'single') {
+        // Einmalzahlung: Payment Intent erstellen
+        const response = await fetch('/.netlify/functions/create-payment-intent', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -89,7 +101,8 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           body: JSON.stringify({
             amount: 1.99,
             currency: 'eur',
-            planId: 'single'
+            planId: 'single',
+            paymentMethod: paymentMethod
           }),
         });
         
@@ -100,9 +113,9 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         const data = await response.json();
         clientSecret = data.clientSecret;
         
-             } else {
-         // Abonnement: Subscription erstellen
-         const response = await fetch('/.netlify/functions/create-subscription', {
+      } else {
+        // Abonnement: Subscription erstellen
+        const response = await fetch('/.netlify/functions/create-subscription', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -110,7 +123,8 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           body: JSON.stringify({
             email,
             name,
-            planId: selectedPlan
+            planId: selectedPlan,
+            paymentMethod: paymentMethod
           }),
         });
         
@@ -123,18 +137,48 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
       }
 
       // Stripe Payment bestätigen
-      const { error } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement)!,
-          billing_details: {
-            name,
-            email,
+      let result;
+      if (paymentMethod === 'card') {
+        result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement)!,
+            billing_details: {
+              name,
+              email,
+            },
+          }
+        });
+      } else if (paymentMethod === 'paypal') {
+        // PayPal wird über Stripe automatisch verarbeitet
+        result = await stripe.confirmPayment({
+          elements,
+          clientSecret,
+          confirmParams: {
+            return_url: window.location.origin + '/success',
           },
-        }
-      });
+        });
+      } else if (paymentMethod === 'applepay' || paymentMethod === 'googlepay') {
+        // Apple Pay / Google Pay
+        result = await stripe.confirmPayment({
+          elements,
+          clientSecret,
+          confirmParams: {
+            return_url: window.location.origin + '/success',
+          },
+        });
+      } else if (paymentMethod === 'sepa') {
+        // SEPA Banküberweisung
+        result = await stripe.confirmPayment({
+          elements,
+          clientSecret,
+          confirmParams: {
+            return_url: window.location.origin + '/success',
+          },
+        });
+      }
 
-      if (error) {
-        throw new Error(error.message);
+      if (result?.error) {
+        throw new Error(result.error.message);
       }
 
       console.log('Zahlung erfolgreich!');
@@ -148,6 +192,18 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
     } finally {
       setProcessing(false);
     }
+  };
+
+  const formatIBAN = (value: string) => {
+    // IBAN formatieren: DE89 3704 0044 0532 0130 00
+    const v = value.replace(/\s/g, '').toUpperCase();
+    if (v.startsWith('DE') && v.length > 2) {
+      const country = v.substring(0, 2);
+      const rest = v.substring(2);
+      const formatted = rest.match(/.{1,4}/g)?.join(' ') || rest;
+      return `${country} ${formatted}`;
+    }
+    return v;
   };
 
   return (
@@ -165,6 +221,75 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Payment Method Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Zahlungsmethode
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('card')}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                paymentMethod === 'card'
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <CreditCard className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-xs font-medium">Karte</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('paypal')}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                paymentMethod === 'paypal'
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <PayPalIcon className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-xs font-medium">PayPal</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('applepay')}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                paymentMethod === 'applepay'
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <Smartphone className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-xs font-medium">Apple Pay</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('googlepay')}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                paymentMethod === 'googlepay'
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <Smartphone className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-xs font-medium">Google Pay</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('sepa')}
+              className={`p-3 border rounded-lg text-center transition-colors ${
+                paymentMethod === 'sepa'
+                  ? 'border-brand-500 bg-brand-50 text-brand-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <Building2 className="w-4 h-4 mx-auto mb-1" />
+              <span className="text-xs font-medium">SEPA</span>
+            </button>
+          </div>
+        </div>
+
         {/* Personal Information */}
         <div className="space-y-3">
           <div>
@@ -208,20 +333,99 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
               </p>
             )}
           </div>
+
+          {/* SEPA IBAN */}
+          {paymentMethod === 'sepa' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                IBAN <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={iban}
+                onChange={(e) => setIban(formatIBAN(e.target.value))}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent ${
+                  errors.iban ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="DE89 3704 0044 0532 0130 00"
+                maxLength={29}
+              />
+              {errors.iban && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.iban}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                Nur deutsche IBANs werden unterstützt
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Stripe Card Element */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Kreditkarteninformationen <span className="text-red-500">*</span>
-          </label>
-          <div className="border border-gray-300 rounded-md p-3 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-transparent">
-            <CardElement options={cardElementOptions} />
+        {paymentMethod === 'card' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Kreditkarteninformationen <span className="text-red-500">*</span>
+            </label>
+            <div className="border border-gray-300 rounded-md p-3 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-transparent">
+              <CardElement options={cardElementOptions} />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Ihre Kartendaten werden sicher von Stripe verarbeitet
+            </p>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Ihre Kartendaten werden sicher von Stripe verarbeitet
-          </p>
-        </div>
+        )}
+
+        {/* Payment Method Info */}
+        {paymentMethod === 'paypal' && (
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 text-blue-800">
+              <PayPalIcon className="w-4 h-4" />
+              <span className="text-sm font-medium">PayPal-Zahlung</span>
+            </div>
+            <p className="mt-1 text-xs text-blue-700">
+              Nach dem Klick auf "Zahlen" werden Sie zu PayPal weitergeleitet
+            </p>
+          </div>
+        )}
+
+        {paymentMethod === 'applepay' && (
+          <div className="bg-black p-3 rounded-lg border border-gray-300">
+            <div className="flex items-center gap-2 text-white">
+              <Smartphone className="w-4 h-4" />
+              <span className="text-sm font-medium">Apple Pay</span>
+            </div>
+            <p className="mt-1 text-xs text-gray-300">
+              Sichere Zahlung über Apple Pay
+            </p>
+          </div>
+        )}
+
+        {paymentMethod === 'googlepay' && (
+          <div className="bg-blue-600 p-3 rounded-lg border border-blue-500">
+            <div className="flex items-center gap-2 text-white">
+              <Smartphone className="w-4 h-4" />
+              <span className="text-sm font-medium">Google Pay</span>
+            </div>
+            <p className="mt-1 text-xs text-blue-200">
+              Sichere Zahlung über Google Pay
+            </p>
+          </div>
+        )}
+
+        {paymentMethod === 'sepa' && (
+          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 text-green-800">
+              <Building2 className="w-4 h-4" />
+              <span className="text-sm font-medium">SEPA Banküberweisung</span>
+            </div>
+            <p className="mt-1 text-xs text-green-700">
+              Direkte Banküberweisung über SEPA
+            </p>
+          </div>
+        )}
 
         {/* Payment Error */}
         {errors.payment && (
@@ -292,7 +496,11 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                {plan.interval === 'once' ? 'Jetzt kaufen' : 'Abonnement starten'}
+                {paymentMethod === 'paypal' ? 'Mit PayPal zahlen' : 
+                 paymentMethod === 'applepay' ? 'Mit Apple Pay zahlen' :
+                 paymentMethod === 'googlepay' ? 'Mit Google Pay zahlen' :
+                 paymentMethod === 'sepa' ? 'SEPA-Zahlung starten' :
+                 (plan.interval === 'once' ? 'Jetzt kaufen' : 'Abonnement starten')}
               </>
             )}
           </button>

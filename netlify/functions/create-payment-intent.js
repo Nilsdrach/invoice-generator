@@ -18,15 +18,37 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { amount, currency = 'eur', planId } = JSON.parse(event.body);
+    const { amount, currency = 'eur', planId, paymentMethod = 'card' } = JSON.parse(event.body);
+    
+    // Payment method types basierend auf Auswahl
+    let paymentMethodTypes = ['card'];
+    
+    switch (paymentMethod) {
+      case 'paypal':
+        paymentMethodTypes = ['paypal'];
+        break;
+      case 'applepay':
+        paymentMethodTypes = ['card', 'apple_pay'];
+        break;
+      case 'googlepay':
+        paymentMethodTypes = ['card', 'google_pay'];
+        break;
+      case 'sepa':
+        paymentMethodTypes = ['sepa_debit'];
+        break;
+      default:
+        paymentMethodTypes = ['card'];
+    }
     
     // Payment Intent erstellen
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe erwartet Cents
       currency,
+      payment_method_types: paymentMethodTypes,
       metadata: {
         planId,
-        planType: planId === 'single' ? 'one-time' : 'subscription'
+        planType: planId === 'single' ? 'one-time' : 'subscription',
+        paymentMethod
       }
     });
 
