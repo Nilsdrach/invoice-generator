@@ -325,15 +325,16 @@ function App() {
                       {user.name}
                     </div>
                     <button
-                      onClick={handleLogout}
+                      onClick={() => setActiveTab('account')}
                       className="text-gray-500 hover:text-gray-700 transition-colors"
+                      title="Konto anzeigen"
                     >
                       <UserIcon className="w-5 h-5" />
                     </button>
                   </div>
                 ) : (
                   <button
-                    onClick={() => setActiveTab('pricing')}
+                    onClick={() => setActiveTab('account')}
                     className="text-sm text-brand-600 hover:text-brand-700 font-medium"
                   >
                     Anmelden
@@ -474,91 +475,115 @@ function App() {
         )}
 
         {/* Account Tab */}
-        {activeTab === 'account' && user && (
+        {activeTab === 'account' && (
           <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
-                Mein Konto
-              </h2>
-              
-              <div className="space-y-6">
-                {/* User Info */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Benutzerinformationen</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">Name</label>
-                        <p className="text-sm text-gray-900">{user.name}</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">E-Mail</label>
-                        <p className="text-sm text-gray-900">{user.email}</p>
-                      </div>
-                      {user.company && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Firma</label>
-                          <p className="text-sm text-gray-900">{user.company}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Subscription Info */}
-                {subscription && (
+            {user ? (
+              // Eingeloggter Nutzer
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
+                  Mein Konto
+                </h2>
+                
+                <div className="space-y-6">
+                  {/* User Info */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Abonnement</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Benutzerinformationen</h3>
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Plan</label>
-                          <p className="text-sm text-gray-900 capitalize">{subscription.plan}</p>
+                          <label className="block text-sm font-medium text-gray-700">Name</label>
+                          <p className="text-sm text-gray-900">{user.name}</p>
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700">Status</label>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            subscription.status === 'active' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {subscription.status === 'active' ? 'Aktiv' : 'Inaktiv'}
-                          </span>
+                          <label className="block text-sm font-medium text-gray-700">E-Mail</label>
+                          <p className="text-sm text-gray-900">{user.email}</p>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Gültig bis</label>
-                          <p className="text-sm text-gray-900">
-                            {subscription.currentPeriodEnd.toLocaleDateString('de-DE')}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Wasserzeichen</label>
-                          <p className="text-sm text-gray-900">
-                            {canCreateWithoutWatermark ? 'Entfernt' : 'Aktiv'}
-                          </p>
-                        </div>
+                        {user.company && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Firma</label>
+                            <p className="text-sm text-gray-900">{user.company}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={() => setActiveTab('pricing')}
-                    className="flex-1 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-                  >
-                    Abonnement verwalten
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Abmelden
-                  </button>
+                  {/* Subscription Info */}
+                  {subscription && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Abonnement</h3>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Plan</label>
+                            <p className="text-sm text-gray-900 capitalize">{subscription.plan}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Status</label>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              subscription.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {subscription.status === 'active' ? 'Aktiv' : 'Inaktiv'}
+                            </span>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Gültig bis</label>
+                            <p className="text-sm text-gray-900">
+                              {subscription.currentPeriodEnd.toLocaleDateString('de-DE')}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Wasserzeichen</label>
+                            <p className="text-sm text-gray-900">
+                              {canCreateWithoutWatermark ? 'Entfernt' : 'Aktiv'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => setActiveTab('pricing')}
+                      className="flex-1 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
+                    >
+                      Abonnement verwalten
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Abmelden
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              // Nicht eingeloggter Nutzer - Login/Register
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
+                  Anmelden oder Registrieren
+                </h2>
+                
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <p className="text-gray-600 mb-4">
+                      Melden Sie sich an oder erstellen Sie ein Konto, um Ihre Abonnements zu verwalten.
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('pricing')}
+                      className="px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                    >
+                      Zu den Abonnements
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
