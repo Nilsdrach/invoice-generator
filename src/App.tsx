@@ -110,6 +110,23 @@ function App() {
     }
   }, [user, subscription]);
 
+  // Subscription-Status beim Laden der App prüfen
+  useEffect(() => {
+    if (subscription && subscription.status === 'active') {
+      const now = new Date();
+      if (now > new Date(subscription.currentPeriodEnd)) {
+        // Abonnement ist abgelaufen
+        const expiredSubscription: Subscription = {
+          ...subscription,
+          status: 'expired',
+          updatedAt: now
+        };
+        setSubscription(expiredSubscription);
+        localStorage.setItem('subscription', JSON.stringify(expiredSubscription));
+      }
+    }
+  }, []); // Nur beim ersten Laden ausführen
+
   // Totale neu berechnen wenn sich Items ändern
   useEffect(() => {
     const subtotal = invoice.items.reduce((sum, item) => sum + item.total, 0);
@@ -182,15 +199,25 @@ function App() {
         
         // Wenn kein Benutzer existiert, erstelle einen
         if (!user) {
+          // Frage nach E-Mail für das Abonnement
+          const userEmail = prompt('Bitte geben Sie Ihre E-Mail-Adresse für das Abonnement ein:');
+          const userName = prompt('Bitte geben Sie Ihren Namen ein:');
+          
           const newUser: User = {
             id: Date.now().toString(),
-            email: 'user@example.com',
-            name: 'Benutzer',
+            email: userEmail || 'user@example.com',
+            name: userName || 'Benutzer',
             createdAt: new Date(),
             updatedAt: new Date()
           };
           setUser(newUser);
+          
+          // Benutzer im LocalStorage speichern
+          localStorage.setItem('user', JSON.stringify(newUser));
         }
+        
+        // Subscription im LocalStorage speichern
+        localStorage.setItem('subscription', JSON.stringify(newSubscription));
         
         // Zurück zum Invoice-Tab
         setActiveTab('invoice');
