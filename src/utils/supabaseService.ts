@@ -122,6 +122,28 @@ export const supabaseService = {
     }
   },
 
+  // Stripe Subscription ID aktualisieren
+  async updateStripeSubscriptionId(
+    subscriptionId: string,
+    stripeSubscriptionId: string
+  ): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('subscriptions')
+        .update({
+          stripe_subscription_id: stripeSubscriptionId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Fehler beim Aktualisieren der Stripe Subscription ID:', error);
+      return false;
+    }
+  },
+
   // Subscription Status aktualisieren
   async updateSubscriptionStatus(
     subscriptionId: string,

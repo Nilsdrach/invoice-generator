@@ -184,7 +184,7 @@ function App() {
     setShowPayment(true);
   };
 
-  const handlePaymentSuccess = async (paymentData?: { email: string; name: string }) => {
+  const handlePaymentSuccess = async (paymentData?: { email: string; name: string; stripeSubscriptionId?: string }) => {
     setIsPaymentLoading(false);
     setShowPayment(false);
     
@@ -217,13 +217,19 @@ function App() {
             dbUser.id,
             selectedPlan
           );
-          
+
           if (!dbSubscription) {
             alert('Fehler beim Erstellen des Abonnements!');
             return;
           }
 
-          // Lokalen State aktualisieren
+          // Stripe Subscription ID aus der Payment-Response extrahieren
+          // Diese kommt von der StripePayment-Komponente
+          const stripeSubscriptionId = paymentData?.stripeSubscriptionId;
+          if (stripeSubscriptionId) {
+            await supabaseService.updateStripeSubscriptionId(dbSubscription.id, stripeSubscriptionId);
+          }
+
           const newUser: User = {
             id: dbUser.id,
             email: dbUser.email,
@@ -240,6 +246,7 @@ function App() {
             currentPeriodStart: new Date(dbSubscription.current_period_start),
             currentPeriodEnd: new Date(dbSubscription.current_period_end),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
+            stripeSubscriptionId: stripeSubscriptionId || dbSubscription.stripe_subscription_id,
             createdAt: new Date(dbSubscription.created_at),
             updatedAt: new Date(dbSubscription.updated_at)
           };
@@ -466,9 +473,13 @@ function App() {
               </div>
             ) : (
               <Pricing
-                onSelectPlan={handleSelectPlan}
-                currentPlan={subscription?.plan || 'free'}
+                subscription={subscription}
                 isLoading={isPaymentLoading}
+                onSelectPlan={handleSelectPlan}
+                onSubscriptionUpdate={(updatedSubscription) => {
+                  setSubscription(updatedSubscription);
+                  localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
+                }}
               />
             )}
           </div>

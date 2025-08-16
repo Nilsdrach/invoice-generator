@@ -112,9 +112,16 @@ exports.handler = async (event, context) => {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        subscriptionId: subscription.id,
-        clientSecret: paymentIntent.client_secret,
-        customerId: customer.id
+        success: true,
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          currentPeriodStart: subscription.current_period_start,
+          currentPeriodEnd: subscription.current_period_end,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          stripeSubscriptionId: subscription.id // Wichtig für Kündigungen!
+        },
+        clientSecret: paymentIntent.client_secret
       })
     };
     

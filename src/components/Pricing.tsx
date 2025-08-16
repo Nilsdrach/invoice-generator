@@ -3,25 +3,21 @@ import { PricingPlan, PRICING_PLANS, SubscriptionPlan } from '../types/subscript
 import { Check, Star, CreditCard, Lock } from 'lucide-react';
 
 interface PricingProps {
-  onSelectPlan: (plan: SubscriptionPlan) => void;
-  currentPlan?: SubscriptionPlan;
-  isLoading?: boolean;
+  subscription: Subscription | null;
+  isLoading: boolean;
+  onSelectPlan: (planId: string) => void;
+  onSubscriptionUpdate?: (updatedSubscription: Subscription) => void;
 }
 
-export const Pricing: React.FC<PricingProps> = ({ 
-  onSelectPlan, 
-  currentPlan = 'free',
-  isLoading = false 
-}) => {
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-
-  const handlePlanSelect = (plan: SubscriptionPlan) => {
-    if (plan === 'free') return;
-    setSelectedPlan(plan);
-    onSelectPlan(plan);
+export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSelectPlan, onSubscriptionUpdate }) => {
+  const isCurrentPlan = (planId: string): boolean => {
+    if (!subscription) return planId === 'free';
+    return subscription.plan === planId && subscription.status === 'active';
   };
 
-  const isCurrentPlan = (planId: SubscriptionPlan) => planId === currentPlan;
+  const handleSelectPlan = (plan: SubscriptionPlan) => {
+    onSelectPlan(plan.id);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -95,7 +91,7 @@ export const Pricing: React.FC<PricingProps> = ({
 
             {/* Action Button */}
             <button
-              onClick={() => handlePlanSelect(plan.id)}
+              onClick={() => handleSelectPlan(plan)}
               disabled={isLoading || isCurrentPlan(plan.id)}
               className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm sm:text-base transition-colors ${
                 isCurrentPlan(plan.id)
@@ -108,11 +104,67 @@ export const Pricing: React.FC<PricingProps> = ({
               }`}
             >
               {isCurrentPlan(plan.id) ? (
-                <div className="flex items-center justify-center gap-2">
-                  <Check className="w-4 h-4" />
-                  Aktueller Plan
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" />
+                    Aktueller Plan
+                  </div>
+                  {subscription && (
+                    <button
+                      onClick={async () => {
+                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
+                          try {
+                            // Echte Stripe-API über Netlify Function
+                            const response = await fetch('/.netlify/functions/cancel-subscription', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                subscriptionId: subscription.stripeSubscriptionId
+                              })
+                            });
+
+                            if (!response.ok) {
+                              const errorData = await response.json();
+                              throw new Error(errorData.error || 'Fehler beim Kündigen');
+                            }
+
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                              // Update local subscription state
+                              const updatedSubscription = {
+                                ...subscription,
+                                cancelAtPeriodEnd: true,
+                                status: 'cancelled' as const
+                              };
+                              
+                              // Update local state
+                              if (onSubscriptionUpdate) {
+                                onSubscriptionUpdate(updatedSubscription);
+                              }
+                              
+                              // Update localStorage
+                              localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
+                              
+                              alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`);
+                            } else {
+                              throw new Error('Kündigung fehlgeschlagen');
+                            }
+                          } catch (error) {
+                            console.error('Fehler beim Kündigen:', error);
+                            alert(`Fehler beim Kündigen des Abonnements: ${error.message}. Bitte versuchen Sie es erneut.`);
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                    >
+                      Abonnement kündigen
+                    </button>
+                  )}
                 </div>
-              ) : plan.id === 'free' ? (
+              ) : plan.id === 'free' && !isCurrentPlan('monthly') && !isCurrentPlan('yearly') ? (
                 'Aktuell aktiv'
               ) : isLoading ? (
                 <div className="flex items-center justify-center gap-2">

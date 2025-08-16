@@ -8,10 +8,10 @@ import { CreditCard, Lock, Shield, CheckCircle, AlertCircle, Loader2, CreditCard
 const stripePromise = loadStripe('pk_test_51RwQ40BdLY4NC8JCYorm7BH1FbjaKA9CnDVx37qrp9U30VtCBRuczUR4njdqoJ3XE4FZb7vNFYnIVQryz8cISQK900gQoW9Ocs');
 
 interface StripePaymentProps {
-  selectedPlan: SubscriptionPlan;
-  onPaymentSuccess: (paymentData?: { email: string; name: string }) => void;
+  selectedPlan: string;
+  onPaymentSuccess: (paymentData?: { email: string; name: string; stripeSubscriptionId?: string }) => void;
   onCancel: () => void;
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
 // Stripe Card Element Styling
@@ -127,6 +127,14 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           throw new Error(result.error.message);
         }
         
+        if (result.paymentIntent) {
+          // Einmalzahlung erfolgreich
+          onPaymentSuccess({
+            email: email,
+            name: name
+          });
+        }
+        
       } else {
         // Abonnement: Subscription erstellen
         const response = await fetch('/.netlify/functions/create-subscription', {
@@ -165,12 +173,21 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         if (result?.error) {
           throw new Error(result.error.message);
         }
+
+        if (result.subscription) {
+          // Abonnement erfolgreich
+          onPaymentSuccess({
+            email: email,
+            name: name,
+            stripeSubscriptionId: result.subscription.id // Stripe Subscription ID
+          });
+        }
       }
 
       console.log('Zahlung erfolgreich!');
       
       // Erfolgreiche Zahlung
-      onPaymentSuccess({ email, name });
+      // onPaymentSuccess({ email, name }); // This line is now handled inside the if/else blocks
       
     } catch (error) {
       console.error('Zahlungsfehler:', error);
