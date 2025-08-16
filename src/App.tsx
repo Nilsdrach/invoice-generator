@@ -572,14 +572,58 @@ function App() {
                 <div className="space-y-6">
                   <div className="text-center">
                     <p className="text-gray-600 mb-4">
-                      Melden Sie sich an oder erstellen Sie ein Konto, um Ihre Abonnements zu verwalten.
+                      Melden Sie sich an oder erstellen Sie ein Konto, um Ihre Einstellungen zu verwalten.
                     </p>
-                    <button
-                      onClick={() => setActiveTab('pricing')}
-                      className="px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-                    >
-                      Zu den Abonnements
-                    </button>
+                    
+                    {/* Einfaches Login-Formular */}
+                    <div className="max-w-sm mx-auto space-y-4">
+                      <input
+                        type="email"
+                        placeholder="E-Mail-Adresse"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={() => {
+                          // Einfacher Login ohne Abo
+                          const email = document.querySelector('input[type="email"]') as HTMLInputElement;
+                          const name = document.querySelector('input[type="text"]') as HTMLInputElement;
+                          
+                          if (email?.value && name?.value) {
+                            // User erstellen/anmelden
+                            const newUser: User = {
+                              id: Date.now().toString(),
+                              email: email.value,
+                              name: name.value,
+                              createdAt: new Date(),
+                              updatedAt: new Date()
+                            };
+                            
+                            setUser(newUser);
+                            localStorage.setItem('user', JSON.stringify(newUser));
+                            
+                            // Zurück zum Invoice-Tab
+                            setActiveTab('invoice');
+                          }
+                        }}
+                        className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                      >
+                        Anmelden / Registrieren
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4 text-center">
+                      <button
+                        onClick={() => setActiveTab('pricing')}
+                        className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                      >
+                        Oder direkt zu den Abonnements
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
