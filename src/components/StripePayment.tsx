@@ -125,6 +125,7 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
             }
           });
         } else {
+          // Für andere Zahlungsmethoden: Payment Intent bestätigen
           result = await stripe.confirmPayment({
             elements,
             clientSecret,
@@ -175,6 +176,7 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
             }
           });
         } else {
+          // Für andere Zahlungsmethoden: Payment Intent bestätigen
           result = await stripe.confirmPayment({
             elements,
             clientSecret,
