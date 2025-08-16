@@ -154,7 +154,9 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         });
         
         if (!response.ok) {
-          throw new Error('Abonnement konnte nicht erstellt werden');
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Netlify Function Fehler:', errorData);
+          throw new Error(`Abonnement konnte nicht erstellt werden: ${errorData.error || errorData.details || 'Unbekannter Fehler'}`);
         }
         
         const data = await response.json();

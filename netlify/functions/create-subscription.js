@@ -18,7 +18,15 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Function gestartet mit Event:', JSON.stringify(event, null, 2));
+    console.log('Environment Variables:', {
+      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ? 'SET' : 'MISSING',
+      STRIPE_MONTHLY_PRICE_ID: process.env.STRIPE_MONTHLY_PRICE_ID || 'MISSING',
+      STRIPE_YEARLY_PRICE_ID: process.env.STRIPE_YEARLY_PRICE_ID || 'MISSING'
+    });
+
     const { email, name, planId, paymentMethod = 'card' } = JSON.parse(event.body);
+    console.log('Request Body:', { email, name, planId, paymentMethod });
     
     // Kunde erstellen oder finden
     let customer;
@@ -29,6 +37,7 @@ exports.handler = async (event, context) => {
     
     if (existingCustomers.data.length > 0) {
       customer = existingCustomers.data[0];
+      console.log('Existierender Kunde gefunden:', customer.id);
     } else {
       customer = await stripe.customers.create({
         email,
@@ -38,6 +47,7 @@ exports.handler = async (event, context) => {
           paymentMethod
         }
       });
+      console.log('Neuer Kunde erstellt:', customer.id);
     }
 
     // Preis-ID basierend auf Plan
@@ -47,6 +57,7 @@ exports.handler = async (event, context) => {
     } else if (planId === 'yearly') {
       priceId = process.env.STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder';
     }
+    console.log('Verwendete Price ID:', priceId);
 
     // Payment method types basierend auf Auswahl
     let paymentMethodTypes = ['card'];
@@ -67,8 +78,10 @@ exports.handler = async (event, context) => {
       default:
         paymentMethodTypes = ['card'];
     }
+    console.log('Payment Method Types:', paymentMethodTypes);
 
     // Abonnement erstellen
+    console.log('Erstelle Abonnement...');
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
@@ -77,8 +90,10 @@ exports.handler = async (event, context) => {
       payment_method_types: paymentMethodTypes,
       expand: ['latest_invoice'],
     });
+    console.log('Abonnement erstellt:', subscription.id);
 
     // Payment Intent für die erste Zahlung erstellen
+    console.log('Erstelle Payment Intent...');
     const paymentIntent = await stripe.paymentIntents.create({
       amount: subscription.latest_invoice.amount_due,
       currency: subscription.latest_invoice.currency,
@@ -89,6 +104,7 @@ exports.handler = async (event, context) => {
         planId: planId
       }
     });
+    console.log('Payment Intent erstellt:', paymentIntent.id);
 
     return {
       statusCode: 200,
@@ -101,11 +117,21 @@ exports.handler = async (event, context) => {
     };
     
   } catch (error) {
-    console.error('Subscription Fehler:', error);
+    console.error('Subscription Fehler Details:', {
+      message: error.message,
+      stack: error.stack,
+      type: error.type,
+      code: error.code
+    });
+    
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: error.message,
+        details: error.type || 'Unknown error',
+        code: error.code || 'NO_CODE'
+      })
     };
   }
 };
