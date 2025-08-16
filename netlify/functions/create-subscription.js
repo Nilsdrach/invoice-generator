@@ -75,7 +75,19 @@ exports.handler = async (event, context) => {
       payment_behavior: 'default_incomplete',
       payment_settings: { save_default_payment_method: 'on_subscription' },
       payment_method_types: paymentMethodTypes,
-      expand: ['latest_invoice.payment_intent'],
+      expand: ['latest_invoice'],
+    });
+
+    // Payment Intent für die erste Zahlung erstellen
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: subscription.latest_invoice.amount_due,
+      currency: subscription.latest_invoice.currency,
+      customer: customer.id,
+      payment_method_types: paymentMethodTypes,
+      metadata: {
+        subscriptionId: subscription.id,
+        planId: planId
+      }
     });
 
     return {
@@ -83,7 +95,7 @@ exports.handler = async (event, context) => {
       headers,
       body: JSON.stringify({
         subscriptionId: subscription.id,
-        clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+        clientSecret: paymentIntent.client_secret,
         customerId: customer.id
       })
     };

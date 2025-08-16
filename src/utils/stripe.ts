@@ -9,3 +9,4 @@ export const STRIPE_CONFIG = {
   paymentMethods: ['card', 'sepa_debit', 'sofort'],
   supportedCountries: ['DE', 'AT', 'CH'],
 };
+
