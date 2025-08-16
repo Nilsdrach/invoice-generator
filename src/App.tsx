@@ -7,6 +7,7 @@ import { WatermarkModal } from './components/WatermarkModal';
 import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Invoice } from './types/invoice';
 import { SubscriptionPlan, User, Subscription, isSubscriptionActive, canCreateInvoiceWithoutWatermark } from './types/subscription';
+import { supabaseService } from './utils/supabaseService';
 import { FileText, Download, Crown, User as UserIcon, Settings, Info } from 'lucide-react';
 
 function App() {
@@ -127,6 +128,19 @@ function App() {
     }
   }, []); // Nur beim ersten Laden ausführen
 
+  // Beim Laden der App: Abgelaufene Subscriptions in Supabase deaktivieren
+  useEffect(() => {
+    const cleanupExpiredSubscriptions = async () => {
+      try {
+        await supabaseService.deactivateExpiredSubscriptions();
+      } catch (error) {
+        console.error('Fehler beim Bereinigen abgelaufener Subscriptions:', error);
+      }
+    };
+
+    cleanupExpiredSubscriptions();
+  }, []); // Nur beim ersten Laden ausführen
+
   // Totale neu berechnen wenn sich Items ändern
   useEffect(() => {
     const subtotal = invoice.items.reduce((sum, item) => sum + item.total, 0);
@@ -170,57 +184,79 @@ function App() {
     setShowPayment(true);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     setIsPaymentLoading(false);
     setShowPayment(false);
     
-    // Simuliere erfolgreiche Zahlung
     if (selectedPlan) {
       if (selectedPlan === 'single') {
         // Bei Einmalzahlung: PDF ohne Wasserzeichen erstellen
         generateInvoicePDF(invoice, false);
-        // Zurück zum Invoice-Tab
         setActiveTab('invoice');
       } else {
-        // Bei Abonnement: Subscription erstellen
-        const newSubscription: Subscription = {
-          id: Date.now().toString(),
-          userId: user?.id || 'anonymous',
-          plan: selectedPlan,
-          status: 'active',
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + (selectedPlan === 'monthly' ? 30 * 24 * 60 * 60 * 1000 : 365 * 24 * 60 * 60 * 1000)),
-          cancelAtPeriodEnd: false,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        setSubscription(newSubscription);
-        
-        // Wenn kein Benutzer existiert, erstelle einen
-        if (!user) {
-          // Frage nach E-Mail für das Abonnement
+        // Bei Abonnement: Echte Daten in Supabase speichern
+        try {
+          // E-Mail und Name vom Nutzer abfragen
           const userEmail = prompt('Bitte geben Sie Ihre E-Mail-Adresse für das Abonnement ein:');
           const userName = prompt('Bitte geben Sie Ihren Namen ein:');
           
-          const newUser: User = {
-            id: Date.now().toString(),
-            email: userEmail || 'user@example.com',
-            name: userName || 'Benutzer',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          setUser(newUser);
+          if (!userEmail || !userName) {
+            alert('E-Mail und Name sind erforderlich!');
+            return;
+          }
+
+          // User in Supabase erstellen/aktualisieren
+          const dbUser = await supabaseService.upsertUser(userEmail, userName);
+          if (!dbUser) {
+            alert('Fehler beim Erstellen des Benutzerkontos!');
+            return;
+          }
+
+          // Subscription in Supabase erstellen
+          const dbSubscription = await supabaseService.createSubscription(
+            dbUser.id,
+            selectedPlan
+          );
           
-          // Benutzer im LocalStorage speichern
+          if (!dbSubscription) {
+            alert('Fehler beim Erstellen des Abonnements!');
+            return;
+          }
+
+          // Lokalen State aktualisieren
+          const newUser: User = {
+            id: dbUser.id,
+            email: dbUser.email,
+            name: dbUser.name,
+            createdAt: new Date(dbUser.created_at),
+            updatedAt: new Date(dbUser.updated_at)
+          };
+
+          const newSubscription: Subscription = {
+            id: dbSubscription.id,
+            userId: dbSubscription.user_id,
+            plan: dbSubscription.plan,
+            status: dbSubscription.status,
+            currentPeriodStart: new Date(dbSubscription.current_period_start),
+            currentPeriodEnd: new Date(dbSubscription.current_period_end),
+            cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
+            createdAt: new Date(dbSubscription.created_at),
+            updatedAt: new Date(dbSubscription.updated_at)
+          };
+
+          setUser(newUser);
+          setSubscription(newSubscription);
+
+          // Lokalen Storage auch aktualisieren (Fallback)
           localStorage.setItem('user', JSON.stringify(newUser));
+          localStorage.setItem('subscription', JSON.stringify(newSubscription));
+
+          alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
+          setActiveTab('invoice');
+        } catch (error) {
+          console.error('Fehler beim Erstellen des Abonnements:', error);
+          alert('Fehler beim Erstellen des Abonnements. Bitte versuchen Sie es erneut.');
         }
-        
-        // Subscription im LocalStorage speichern
-        localStorage.setItem('subscription', JSON.stringify(newSubscription));
-        
-        // Zurück zum Invoice-Tab
-        setActiveTab('invoice');
       }
     }
     
