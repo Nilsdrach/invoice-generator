@@ -112,28 +112,16 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         const data = await response.json();
         const clientSecret = data.clientSecret;
         
-        // Stripe Payment bestätigen
-        let result;
-        if (paymentMethod === 'card') {
-          result = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-              card: elements.getElement(CardElement)!,
-              billing_details: {
-                name,
-                email,
-              },
-            }
-          });
-        } else {
-          // Für andere Zahlungsmethoden: Payment Intent bestätigen
-          result = await stripe.confirmPayment({
-            elements,
-            clientSecret,
-            confirmParams: {
-              return_url: window.location.origin + '/success',
+        // Stripe Payment bestätigen - nur für Kreditkarten
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement)!,
+            billing_details: {
+              name,
+              email,
             },
-          });
-        }
+          }
+        });
 
         if (result?.error) {
           throw new Error(result.error.message);
@@ -163,28 +151,16 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
         const data = await response.json();
         const clientSecret = data.clientSecret;
         
-        // Stripe Payment bestätigen
-        let result;
-        if (paymentMethod === 'card') {
-          result = await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-              card: elements.getElement(CardElement)!,
-              billing_details: {
-                name,
-                email,
-              },
-            }
-          });
-        } else {
-          // Für andere Zahlungsmethoden: Payment Intent bestätigen
-          result = await stripe.confirmPayment({
-            elements,
-            clientSecret,
-            confirmParams: {
-              return_url: window.location.origin + '/success',
+        // Stripe Payment bestätigen - nur für Kreditkarten
+        const result = await stripe.confirmCardPayment(clientSecret, {
+          payment_method: {
+            card: elements.getElement(CardElement)!,
+            billing_details: {
+              name,
+              email,
             },
-          });
-        }
+          }
+        });
 
         if (result?.error) {
           throw new Error(result.error.message);
@@ -236,7 +212,7 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Zahlungsmethode
           </label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <button
               type="button"
               onClick={() => setPaymentMethod('card')}
@@ -247,56 +223,11 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
               }`}
             >
               <CreditCard className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-xs font-medium">Karte</span>
+              <span className="text-xs font-medium">Kreditkarte</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('paypal')}
-              className={`p-3 border rounded-lg text-center transition-colors ${
-                paymentMethod === 'paypal'
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              <PayPalIcon className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-xs font-medium">PayPal</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('applepay')}
-              className={`p-3 border rounded-lg text-center transition-colors ${
-                paymentMethod === 'applepay'
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              <Smartphone className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-xs font-medium">Apple Pay</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('googlepay')}
-              className={`p-3 border rounded-lg text-center transition-colors ${
-                paymentMethod === 'googlepay'
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              <Smartphone className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-xs font-medium">Google Pay</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaymentMethod('sepa')}
-              className={`p-3 border rounded-lg text-center transition-colors ${
-                paymentMethod === 'sepa'
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              <Building2 className="w-4 h-4 mx-auto mb-1" />
-              <span className="text-xs font-medium">SEPA</span>
-            </button>
+            <div className="text-xs text-gray-500 text-center">
+              Andere Zahlungsmethoden werden bald verfügbar sein
+            </div>
           </div>
         </div>
 
