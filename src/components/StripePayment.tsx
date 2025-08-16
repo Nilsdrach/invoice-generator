@@ -9,7 +9,7 @@ const stripePromise = loadStripe('pk_test_51RwQ40BdLY4NC8JCYorm7BH1FbjaKA9CnDVx3
 
 interface StripePaymentProps {
   selectedPlan: SubscriptionPlan;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: (paymentData?: { email: string; name: string }) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -170,7 +170,7 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
       console.log('Zahlung erfolgreich!');
       
       // Erfolgreiche Zahlung
-      onPaymentSuccess();
+      onPaymentSuccess({ email, name });
       
     } catch (error) {
       console.error('Zahlungsfehler:', error);

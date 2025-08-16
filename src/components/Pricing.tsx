@@ -44,7 +44,7 @@ export const Pricing: React.FC<PricingProps> = ({
                 ? 'border-brand-500 bg-brand-50'
                 : 'border-gray-200 hover:border-gray-300'
             } ${
-              isCurrentPlan(plan.id)
+              isCurrentPlan(plan.id) && plan.id !== 'free'
                 ? 'ring-2 ring-brand-500 ring-offset-2'
                 : ''
             }`}
@@ -59,17 +59,8 @@ export const Pricing: React.FC<PricingProps> = ({
               </div>
             )}
 
-            {/* Savings Badge */}
-            {plan.savings && (
-              <div className="absolute -top-3 right-4">
-                <span className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded-full">
-                  {plan.savings}
-                </span>
-              </div>
-            )}
-
             {/* Plan Header */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-6">
               <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
                 {plan.name}
               </h3>
@@ -83,10 +74,12 @@ export const Pricing: React.FC<PricingProps> = ({
                   </span>
                 )}
               </div>
-              {plan.id === 'yearly' && (
+              {plan.id === 'yearly' ? (
                 <p className="text-sm text-green-600 font-medium">
                   Sparen Sie €19,89 pro Jahr
                 </p>
+              ) : (
+                <div className="h-5"></div> // Platzhalter für gleiche Höhe
               )}
             </div>
 
@@ -115,7 +108,10 @@ export const Pricing: React.FC<PricingProps> = ({
               }`}
             >
               {isCurrentPlan(plan.id) ? (
-                'Aktueller Plan'
+                <div className="flex items-center justify-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Aktueller Plan
+                </div>
               ) : plan.id === 'free' ? (
                 'Aktuell aktiv'
               ) : isLoading ? (
@@ -130,15 +126,6 @@ export const Pricing: React.FC<PricingProps> = ({
                 </div>
               )}
             </button>
-
-            {/* Current Plan Indicator */}
-            {isCurrentPlan(plan.id) && (
-              <div className="mt-3 text-center">
-                <span className="text-xs text-brand-600 font-medium bg-brand-100 px-2 py-1 rounded-full">
-                  Ihr aktueller Plan
-                </span>
-              </div>
-            )}
           </div>
         ))}
       </div>

@@ -61,7 +61,7 @@ export const PRICING_PLANS: PricingPlan[] = [
       'Unbegrenzte Rechnungen erstellen',
       'Wasserzeichen auf allen PDFs',
       'Grundlegende Vorlagen',
-      'E-Mail-Support'
+      'E-Mail-Support verfügbar'
     ]
   },
   {

@@ -184,7 +184,7 @@ function App() {
     setShowPayment(true);
   };
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (paymentData?: { email: string; name: string }) => {
     setIsPaymentLoading(false);
     setShowPayment(false);
     
@@ -196,9 +196,9 @@ function App() {
       } else {
         // Bei Abonnement: Echte Daten in Supabase speichern
         try {
-          // E-Mail und Name vom Nutzer abfragen
-          const userEmail = prompt('Bitte geben Sie Ihre E-Mail-Adresse für das Abonnement ein:');
-          const userName = prompt('Bitte geben Sie Ihren Namen ein:');
+          // E-Mail und Name aus dem Payment Form verwenden
+          const userEmail = paymentData?.email || 'user@example.com';
+          const userName = paymentData?.name || 'Benutzer';
           
           if (!userEmail || !userName) {
             alert('E-Mail und Name sind erforderlich!');
