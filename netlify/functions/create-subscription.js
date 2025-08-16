@@ -86,8 +86,10 @@ exports.handler = async (event, context) => {
       customer: customer.id,
       items: [{ price: priceId }],
       payment_behavior: 'default_incomplete',
-      payment_settings: { save_default_payment_method: 'on_subscription' },
-      payment_method_types: paymentMethodTypes,
+      payment_settings: { 
+        save_default_payment_method: 'on_subscription',
+        payment_method_types: paymentMethodTypes
+      },
       expand: ['latest_invoice'],
     });
     console.log('Abonnement erstellt:', subscription.id);
