@@ -218,7 +218,16 @@ function App() {
 
   const handleGeneratePDF = () => {
     // Prüfen ob Benutzer PDF ohne Wasserzeichen erstellen kann
-    const canCreateWithoutWatermark = canCreateInvoiceWithoutWatermark(subscription);
+    // Eigene Logik für Wasserzeichen - auch gekündigte Abos können ohne Wasserzeichen erstellen
+    const canCreateWithoutWatermark = (() => {
+      if (!subscription) return false;
+      
+      // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
+      const now = new Date();
+      const isStillActive = now <= subscription.currentPeriodEnd;
+      
+      return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive && subscription.plan !== 'free';
+    })();
     
     if (!canCreateWithoutWatermark) {
       // Für kostenlose Nutzer: Zeige Modal vor der PDF-Erstellung
@@ -363,8 +372,27 @@ function App() {
     generateInvoicePDF(invoice, true);
   };
 
-  const canCreateWithoutWatermark = canCreateInvoiceWithoutWatermark(subscription);
-  const isSubscribed = isSubscriptionActive(subscription);
+  // Eigene Logik für Wasserzeichen - auch gekündigte Abos können ohne Wasserzeichen erstellen
+  const canCreateWithoutWatermark = (() => {
+    if (!subscription) return false;
+    
+    // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
+    const now = new Date();
+    const isStillActive = now <= subscription.currentPeriodEnd;
+    
+    return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive && subscription.plan !== 'free';
+  })();
+  
+  // Eigene Logik für Pro-Zeichen - auch gekündigte Abos zeigen Pro an, solange sie laufen
+  const isSubscribed = (() => {
+    if (!subscription) return false;
+    
+    // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
+    const now = new Date();
+    const isStillActive = now <= subscription.currentPeriodEnd;
+    
+    return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive;
+  })();
 
   return (
     <div className="min-h-screen bg-gray-50">

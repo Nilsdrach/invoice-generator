@@ -109,8 +109,8 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                     ? `Läuft aus am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}` 
                     : 'Aktueller Plan'}
                 </div>
-                {/* Kündigungsbutton nur für bezahlte Pläne anzeigen */}
-                {subscription && !subscription.cancelAtPeriodEnd && plan.id !== 'free' && (
+                {/* Kündigungsbutton nur für bezahlte Pläne anzeigen, die noch nicht gekündigt sind */}
+                {subscription && !subscription.cancelAtPeriodEnd && plan.id !== 'free' ? (
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
@@ -183,6 +183,11 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   >
                     Abonnement kündigen
                   </button>
+                ) : (
+                  // Für gekündigte Abos: Zeige Info-Text
+                  <div className="text-center text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
+                    Abonnement läuft bis zum Ablaufdatum weiter
+                  </div>
                 )}
               </div>
             ) : (
