@@ -106,10 +106,10 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                       console.log('Subscription:', subscription);
                       console.log('Stripe Subscription ID:', subscription.stripeSubscriptionId);
                       
-                                              if (!subscription.stripeSubscriptionId) {
-                          alert('Fehler: Stripe Subscription ID nicht gefunden. Bitte kontaktieren Sie den Support.');
-                          return;
-                        }
+                      if (!subscription.stripeSubscriptionId) {
+                        alert('Fehler: Stripe Subscription ID nicht gefunden. Bitte kontaktieren Sie den Support.');
+                        return;
+                      }
 
                         if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
                           try {
@@ -163,7 +163,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                           }
                         }
 
-                      // Doppelter Code entfernt - verwende nur die lokale Kündigung oben
+                      // Doppelter Code entfernt
                     }}
                     className="w-full px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                   >

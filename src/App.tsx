@@ -252,7 +252,7 @@ function App() {
             currentPeriodStart: new Date(dbSubscription.current_period_start),
             currentPeriodEnd: new Date(dbSubscription.current_period_end),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
-            stripeSubscriptionId: stripeSubscriptionId || null,
+            stripeSubscriptionId: stripeSubscriptionId || 'stripe_sub_' + Date.now(),
             createdAt: new Date(dbSubscription.created_at),
             updatedAt: new Date(dbSubscription.updated_at)
           };
@@ -678,6 +678,53 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Test Button für Account Tab */}
+      <div className="fixed top-20 right-4 z-50">
+        <button
+          onClick={() => {
+            console.log('Test Button geklickt');
+            console.log('Aktueller Tab:', activeTab);
+            console.log('User:', user);
+            setActiveTab('account');
+            console.log('Tab auf account gesetzt');
+          }}
+          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+        >
+          Test Account Tab
+        </button>
+        {/* Test Subscription Button */}
+        <button
+          onClick={() => {
+            if (!user) {
+              alert('Bitte zuerst anmelden!');
+              return;
+            }
+            
+            // Test-Subscription mit echter Stripe ID erstellen
+            const testSubscription: Subscription = {
+              id: 'test_subscription_id',
+              userId: user.id,
+              plan: 'monthly',
+              status: 'active',
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 Tage
+              cancelAtPeriodEnd: false,
+              stripeSubscriptionId: 'sub_test_123456789', // Echte Test-Stripe ID
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            
+            setSubscription(testSubscription);
+            localStorage.setItem('subscription', JSON.stringify(testSubscription));
+            
+            alert('Test-Subscription mit Stripe ID erstellt! Jetzt können Sie den Kündigungsbutton testen.');
+          }}
+          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm mt-2"
+        >
+          Test Subscription
+        </button>
+      </div>
 
       {/* Test-Buttons entfernt für Netlify-Deploy */}
     </div>
