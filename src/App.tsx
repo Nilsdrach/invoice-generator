@@ -218,15 +218,19 @@ function App() {
 
   const handleGeneratePDF = () => {
     // Prüfen ob Benutzer PDF ohne Wasserzeichen erstellen kann
-    // Eigene Logik für Wasserzeichen - auch gekündigte Abos können ohne Wasserzeichen erstellen
+    // Wasserzeichen entfernen wenn Pro-Abo aktiv ist
     const canCreateWithoutWatermark = (() => {
       if (!subscription) return false;
       
-      // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
-      const now = new Date();
-      const isStillActive = now <= subscription.currentPeriodEnd;
+      // Nur für Pro-Pläne (nicht free)
+      if (subscription.plan === 'free') return false;
       
-      return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive && subscription.plan !== 'free';
+      // Wenn das Abo aktiv ist, kann ohne Wasserzeichen erstellt werden
+      if (subscription.status === 'active' || subscription.status === 'trialing') {
+        return true;
+      }
+      
+      return false;
     })();
     
     if (!canCreateWithoutWatermark) {
@@ -372,26 +376,31 @@ function App() {
     generateInvoicePDF(invoice, true);
   };
 
-  // Eigene Logik für Wasserzeichen - auch gekündigte Abos können ohne Wasserzeichen erstellen
+  // Wasserzeichen entfernen wenn Pro-Abo aktiv ist (auch wenn gekündigt aber noch läuft)
   const canCreateWithoutWatermark = (() => {
     if (!subscription) return false;
     
-    // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
-    const now = new Date();
-    const isStillActive = now <= subscription.currentPeriodEnd;
+    // Nur für Pro-Pläne (nicht free)
+    if (subscription.plan === 'free') return false;
     
-    return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive && subscription.plan !== 'free';
+    // Wenn das Abo aktiv ist, kann ohne Wasserzeichen erstellt werden
+    if (subscription.status === 'active' || subscription.status === 'trialing') {
+      return true;
+    }
+    
+    return false;
   })();
   
-  // Eigene Logik für Pro-Zeichen - auch gekündigte Abos zeigen Pro an, solange sie laufen
+  // Pro-Zeichen anzeigen wenn Abo aktiv ist ODER gekündigt aber noch läuft
   const isSubscribed = (() => {
     if (!subscription) return false;
     
-    // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
-    const now = new Date();
-    const isStillActive = now <= subscription.currentPeriodEnd;
+    // Wenn das Abo aktiv ist, zeige Pro
+    if (subscription.status === 'active' || subscription.status === 'trialing') {
+      return true;
+    }
     
-    return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive;
+    return false;
   })();
 
   return (

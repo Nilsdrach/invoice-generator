@@ -13,12 +13,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
   const isCurrentPlan = (planId: SubscriptionPlan): boolean => {
     if (planId === 'free') return !subscription || subscription.plan === 'free';
     if (!subscription) return false;
-    
-    // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
-    const now = new Date();
-    const isStillActive = now <= subscription.currentPeriodEnd;
-    
-    return subscription.plan === planId && (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive;
+    return subscription.plan === planId && subscription.status === 'active';
   };
 
   const handleSelectPlan = (plan: PricingPlan) => {
@@ -105,7 +100,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   <Check className="w-4 h-4" />
                   {plan.id === 'free' 
                     ? 'Kostenloser Plan' 
-                    : subscription.cancelAtPeriodEnd 
+                    : subscription.cancelAtPeriodEnd && subscription.plan !== 'free'
                     ? `Läuft aus am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}` 
                     : 'Aktueller Plan'}
                 </div>
@@ -209,8 +204,6 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   'Aktuell aktiv'
                 ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
                   ''
-                ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
-                  `Läuft aus am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}`
                 ) : isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
