@@ -8,7 +8,7 @@ import { CreditCard, Lock, Shield, CheckCircle, AlertCircle, Loader2, CreditCard
 const stripePromise = loadStripe('pk_test_51RwQ40BdLY4NC8JCYorm7BH1FbjaKA9CnDVx37qrp9U30VtCBRuczUR4njdqoJ3XE4FZb7vNFYnIVQryz8cISQK900gQoW9Ocs');
 
 interface StripePaymentProps {
-  selectedPlan: string;
+  selectedPlan: SubscriptionPlan;
   onPaymentSuccess: (paymentData?: { email: string; name: string; stripeSubscriptionId?: string }) => void;
   onCancel: () => void;
   isLoading: boolean;
@@ -174,12 +174,12 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           throw new Error(result.error.message);
         }
 
-        if (result.subscription) {
-          // Abonnement erfolgreich
+        if (result.paymentIntent) {
+          // Abonnement erfolgreich - Payment Intent bestätigt
           onPaymentSuccess({
             email: email,
             name: name,
-            stripeSubscriptionId: data.subscription.stripeSubscriptionId // Aus der Netlify Function Response
+            stripeSubscriptionId: data.subscription.id // Direkt aus der Netlify Function Response
           });
         }
       }

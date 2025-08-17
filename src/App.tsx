@@ -177,10 +177,10 @@ function App() {
     generateInvoicePDF(invoice, false);
   };
 
-  const handleSelectPlan = (plan: SubscriptionPlan) => {
-    if (plan === 'free') return;
+  const handleSelectPlan = (planId: SubscriptionPlan) => {
+    if (planId === 'free') return;
     
-    setSelectedPlan(plan);
+    setSelectedPlan(planId);
     setShowPayment(true);
   };
 
@@ -252,7 +252,7 @@ function App() {
             currentPeriodStart: new Date(dbSubscription.current_period_start),
             currentPeriodEnd: new Date(dbSubscription.current_period_end),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
-            stripeSubscriptionId: stripeSubscriptionId || dbSubscription.stripe_subscription_id,
+            stripeSubscriptionId: stripeSubscriptionId || dbSubscription.stripe_subscription_id || 'test_subscription_id',
             createdAt: new Date(dbSubscription.created_at),
             updatedAt: new Date(dbSubscription.updated_at)
           };
@@ -517,12 +517,6 @@ function App() {
                           <label className="block text-sm font-medium text-gray-700">E-Mail</label>
                           <p className="text-sm text-gray-900">{user.email}</p>
                         </div>
-                        {user.company && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Firma</label>
-                            <p className="text-sm text-gray-900">{user.company}</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -577,6 +571,49 @@ function App() {
                       className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       Abmelden
+                    </button>
+                    {/* Debug Button */}
+                    <button
+                      onClick={() => {
+                        console.log('Debug: User:', user);
+                        console.log('Debug: Subscription:', subscription);
+                        console.log('Debug: Stripe Subscription ID:', subscription?.stripeSubscriptionId);
+                        alert(`Debug Info:\nUser: ${user?.name} (${user?.email})\nSubscription: ${subscription?.plan} - ${subscription?.status}\nStripe ID: ${subscription?.stripeSubscriptionId || 'Nicht gesetzt'}`);
+                      }}
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm"
+                    >
+                      Debug Info
+                    </button>
+                    {/* Test Subscription Button */}
+                    <button
+                      onClick={() => {
+                        if (!user) {
+                          alert('Bitte zuerst anmelden!');
+                          return;
+                        }
+                        
+                        // Test-Subscription erstellen
+                        const testSubscription: Subscription = {
+                          id: 'test_subscription_id',
+                          userId: user.id,
+                          plan: 'monthly',
+                          status: 'active',
+                          currentPeriodStart: new Date(),
+                          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 Tage
+                          cancelAtPeriodEnd: false,
+                          stripeSubscriptionId: 'test_stripe_subscription_id',
+                          createdAt: new Date(),
+                          updatedAt: new Date()
+                        };
+                        
+                        setSubscription(testSubscription);
+                        localStorage.setItem('subscription', JSON.stringify(testSubscription));
+                        
+                        alert('Test-Subscription erstellt! Jetzt können Sie den Kündigungsbutton testen.');
+                      }}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                    >
+                      Test Subscription
                     </button>
                   </div>
                 </div>
@@ -674,12 +711,12 @@ function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-                          <StripePayment
-              selectedPlan={selectedPlan}
-              onPaymentSuccess={handlePaymentSuccess}
-              onCancel={handlePaymentCancel}
-              isLoading={isPaymentLoading}
-            />
+              <StripePayment
+                selectedPlan={selectedPlan}
+                onPaymentSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+                isLoading={isPaymentLoading}
+              />
             </div>
           </div>
         </div>
