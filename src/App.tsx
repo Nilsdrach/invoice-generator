@@ -578,7 +578,19 @@ function App() {
                         console.log('Debug: User:', user);
                         console.log('Debug: Subscription:', subscription);
                         console.log('Debug: Stripe Subscription ID:', subscription?.stripeSubscriptionId);
-                        alert(`Debug Info:\nUser: ${user?.name} (${user?.email})\nSubscription: ${subscription?.plan} - ${subscription?.status}\nStripe ID: ${subscription?.stripeSubscriptionId || 'Nicht gesetzt'}`);
+                        console.log('Debug: LocalStorage User:', localStorage.getItem('user'));
+                        console.log('Debug: LocalStorage Subscription:', localStorage.getItem('subscription'));
+                        
+                        const debugInfo = `
+Debug Info:
+User: ${user?.name} (${user?.email})
+Subscription: ${subscription?.plan} - ${subscription?.status}
+Stripe ID: ${subscription?.stripeSubscriptionId || 'Nicht gesetzt'}
+Created: ${subscription?.createdAt?.toLocaleDateString() || 'N/A'}
+Valid Until: ${subscription?.currentPeriodEnd?.toLocaleDateString() || 'N/A'}
+                        `.trim();
+                        
+                        alert(debugInfo);
                       }}
                       className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm"
                     >

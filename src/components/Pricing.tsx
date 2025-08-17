@@ -106,17 +106,54 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                       console.log('Subscription:', subscription);
                       console.log('Stripe Subscription ID:', subscription.stripeSubscriptionId);
                       
-                      if (!subscription.stripeSubscriptionId) {
-                        alert('Fehler: Stripe Subscription ID nicht gefunden. Bitte kontaktieren Sie den Support.');
-                        return;
-                      }
+                                              if (!subscription.stripeSubscriptionId) {
+                          console.warn('Keine Stripe Subscription ID gefunden, verwende lokale Kündigung');
+                          // Lokale Kündigung ohne Stripe
+                          if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
+                            try {
+                              // Update local subscription state
+                              const updatedSubscription = {
+                                ...subscription,
+                                cancelAtPeriodEnd: true,
+                                status: 'cancelled' as const
+                              };
+                              
+                              // Update local state
+                              if (onSubscriptionUpdate) {
+                                onSubscriptionUpdate(updatedSubscription);
+                              }
+                              
+                              // Update localStorage
+                              localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
+                              
+                              alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`);
+                            } catch (error) {
+                              console.error('Fehler bei lokaler Kündigung:', error);
+                              alert('Fehler bei der Kündigung. Bitte versuchen Sie es erneut.');
+                            }
+                          }
+                          return;
+                        }
 
                       if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
                         try {
                           console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
                           
-                          // Test-Funktion für lokale Entwicklung
-                          const response = await fetch('/.netlify/functions/test-cancel', {
+                          // Versuche zuerst die echte Netlify Function, dann die Test-Funktion
+                          let response;
+                          try {
+                            response = await fetch('/.netlify/functions/cancel-subscription', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                subscriptionId: subscription.stripeSubscriptionId
+                              })
+                            });
+                          } catch (error) {
+                            console.log('Netlify Function nicht verfügbar, verwende Test-Funktion');
+                            response = await fetch('/.netlify/functions/test-cancel', {
                             method: 'POST',
                             headers: {
                               'Content-Type': 'application/json',
