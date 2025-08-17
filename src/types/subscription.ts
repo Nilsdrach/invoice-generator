@@ -122,11 +122,21 @@ export const getPlanById = (id: SubscriptionPlan): PricingPlan | undefined => {
 
 export const isSubscriptionActive = (subscription?: Subscription): boolean => {
   if (!subscription) return false;
-  return subscription.status === 'active' || subscription.status === 'trialing';
+  
+  // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
+  const now = new Date();
+  const isStillActive = now <= subscription.currentPeriodEnd;
+  
+  return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive;
 };
 
 export const canCreateInvoiceWithoutWatermark = (subscription?: Subscription): boolean => {
   if (!subscription) return false;
-  return isSubscriptionActive(subscription) && subscription.plan !== 'free';
+  
+  // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
+  const now = new Date();
+  const isStillActive = now <= subscription.currentPeriodEnd;
+  
+  return (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive && subscription.plan !== 'free';
 };
 
