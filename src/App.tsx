@@ -178,7 +178,36 @@ function App() {
   };
 
   const handleSelectPlan = (planId: SubscriptionPlan) => {
-    if (planId === 'free') return;
+    if (planId === 'free') {
+      // Free Plan auswählen - aktuelle Subscription auf Free setzen
+      if (subscription && subscription.plan !== 'free') {
+        const freeSubscription: Subscription = {
+          ...subscription,
+          plan: 'free',
+          status: 'active',
+          cancelAtPeriodEnd: false,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
+          updatedAt: new Date()
+        };
+        
+        setSubscription(freeSubscription);
+        localStorage.setItem('subscription', JSON.stringify(freeSubscription));
+        
+        // Optional: Supabase aktualisieren
+        if (user) {
+          supabaseService.updateSubscription(freeSubscription.id, {
+            plan: 'free',
+            status: 'active',
+            cancel_at_period_end: false
+          }).catch(console.error);
+        }
+        
+        alert('Sie sind jetzt auf den Free Plan gewechselt!');
+        setActiveTab('invoice');
+      }
+      return;
+    }
     
     setSelectedPlan(planId);
     setShowPayment(true);
@@ -524,11 +553,17 @@ function App() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Status</label>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              subscription.status === 'active' 
+                              subscription.cancelAtPeriodEnd 
+                                ? 'bg-orange-100 text-orange-800' 
+                                : subscription.status === 'active' 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {subscription.status === 'active' ? 'Aktiv' : 'Inaktiv'}
+                              {subscription.cancelAtPeriodEnd 
+                                ? 'Gekündigt - läuft bis zum Ablaufdatum' 
+                                : subscription.status === 'active' 
+                                ? 'Aktiv' 
+                                : 'Inaktiv'}
                             </span>
                           </div>
                           <div>

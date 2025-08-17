@@ -49,8 +49,8 @@ exports.handler = async (event, context) => {
           success: true,
           subscription: {
             id: subscriptionId,
-            status: 'active',
-            cancelAtPeriodEnd: true,
+            status: 'active', // Status bleibt "active" - läuft weiter bis zum Ablaufdatum
+            cancelAtPeriodEnd: true, // Wird am Ende der Periode gekündigt
             currentPeriodEnd: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60), // 30 Tage
             cancelAt: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
           }
