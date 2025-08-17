@@ -111,7 +111,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                         return;
                       }
 
-                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
+                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
                           try {
                             console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
                             
@@ -153,7 +153,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                               // Update localStorage
                               localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
                               
-                              alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`);
+                              alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`);
                             } else {
                               throw new Error('Kündigung fehlgeschlagen');
                             }

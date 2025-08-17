@@ -545,7 +545,10 @@ function App() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Gültig bis</label>
                             <p className="text-sm text-gray-900">
-                              {subscription.currentPeriodEnd.toLocaleDateString('de-DE')}
+                              {subscription.currentPeriodEnd instanceof Date 
+                                ? subscription.currentPeriodEnd.toLocaleDateString('de-DE')
+                                : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')
+                              }
                             </p>
                           </div>
                           <div>
@@ -737,6 +740,9 @@ function App() {
               createdAt: new Date(),
               updatedAt: new Date()
             };
+            
+            console.log('Test-Subscription erstellt:', testSubscription);
+            console.log('currentPeriodEnd ist Date:', testSubscription.currentPeriodEnd instanceof Date);
             
             setSubscription(testSubscription);
             localStorage.setItem('subscription', JSON.stringify(testSubscription));
