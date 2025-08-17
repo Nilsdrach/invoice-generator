@@ -226,8 +226,14 @@ function App() {
           // Stripe Subscription ID aus der Payment-Response extrahieren
           // Diese kommt von der StripePayment-Komponente
           const stripeSubscriptionId = paymentData?.stripeSubscriptionId;
+          console.log('Stripe Subscription ID aus Payment Data:', stripeSubscriptionId);
+          
           if (stripeSubscriptionId) {
-            await supabaseService.updateStripeSubscriptionId(dbSubscription.id, stripeSubscriptionId);
+            console.log('Aktualisiere Stripe Subscription ID in Supabase...');
+            const updateSuccess = await supabaseService.updateStripeSubscriptionId(dbSubscription.id, stripeSubscriptionId);
+            console.log('Update erfolgreich:', updateSuccess);
+          } else {
+            console.warn('Keine Stripe Subscription ID gefunden!');
           }
 
           const newUser: User = {
@@ -250,6 +256,8 @@ function App() {
             createdAt: new Date(dbSubscription.created_at),
             updatedAt: new Date(dbSubscription.updated_at)
           };
+
+          console.log('Neue Subscription erstellt:', newSubscription);
 
           setUser(newUser);
           setSubscription(newSubscription);

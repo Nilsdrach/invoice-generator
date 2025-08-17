@@ -179,7 +179,7 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           onPaymentSuccess({
             email: email,
             name: name,
-            stripeSubscriptionId: result.subscription.id // Stripe Subscription ID
+            stripeSubscriptionId: data.subscription.stripeSubscriptionId // Aus der Netlify Function Response
           });
         }
       }

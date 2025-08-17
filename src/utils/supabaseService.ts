@@ -128,6 +128,10 @@ export const supabaseService = {
     stripeSubscriptionId: string
   ): Promise<boolean> {
     try {
+      console.log('Supabase: Aktualisiere Stripe Subscription ID...');
+      console.log('Subscription ID:', subscriptionId);
+      console.log('Stripe Subscription ID:', stripeSubscriptionId);
+      
       const { error } = await supabase
         .from('subscriptions')
         .update({
@@ -136,7 +140,12 @@ export const supabaseService = {
         })
         .eq('id', subscriptionId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase Update Error:', error);
+        throw error;
+      }
+      
+      console.log('Supabase: Stripe Subscription ID erfolgreich aktualisiert');
       return true;
     } catch (error) {
       console.error('Fehler beim Aktualisieren der Stripe Subscription ID:', error);

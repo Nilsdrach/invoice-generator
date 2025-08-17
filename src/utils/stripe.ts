@@ -10,3 +10,4 @@ export const STRIPE_CONFIG = {
   supportedCountries: ['DE', 'AT', 'CH'],
 };
 
+

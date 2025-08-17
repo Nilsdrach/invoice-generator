@@ -112,8 +112,19 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   {subscription && (
                     <button
                       onClick={async () => {
+                        console.log('Kündigungsbutton geklickt');
+                        console.log('Subscription:', subscription);
+                        console.log('Stripe Subscription ID:', subscription.stripeSubscriptionId);
+                        
+                        if (!subscription.stripeSubscriptionId) {
+                          alert('Fehler: Stripe Subscription ID nicht gefunden. Bitte kontaktieren Sie den Support.');
+                          return;
+                        }
+
                         if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
                           try {
+                            console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
+                            
                             // Echte Stripe-API über Netlify Function
                             const response = await fetch('/.netlify/functions/cancel-subscription', {
                               method: 'POST',
@@ -125,12 +136,17 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                               })
                             });
 
+                            console.log('Response Status:', response.status);
+                            console.log('Response Headers:', response.headers);
+
                             if (!response.ok) {
                               const errorData = await response.json();
+                              console.error('API Error:', errorData);
                               throw new Error(errorData.error || 'Fehler beim Kündigen');
                             }
 
                             const result = await response.json();
+                            console.log('API Success:', result);
                             
                             if (result.success) {
                               // Update local subscription state
