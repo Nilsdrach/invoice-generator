@@ -688,10 +688,14 @@ function App() {
             console.log('User:', user);
             setActiveTab('account');
             console.log('Tab auf account gesetzt');
+            // Force re-render
+            setTimeout(() => {
+              console.log('Tab nach Timeout:', activeTab);
+            }, 100);
           }}
           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
         >
-          Test Account Tab
+          Test Account Tab (Aktuell: {activeTab})
         </button>
         {/* Test Subscription Button */}
         <button

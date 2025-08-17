@@ -38,7 +38,27 @@ exports.handler = async (event, context) => {
 
     console.log('Cancelling subscription:', subscriptionId);
 
-    // Kündige das Abo zum Ende der aktuellen Periode
+    // Prüfe ob es eine Test-ID ist
+    if (subscriptionId.startsWith('sub_test_') || subscriptionId.startsWith('stripe_sub_')) {
+      console.log('Test subscription detected, simulating cancellation');
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          subscription: {
+            id: subscriptionId,
+            status: 'active',
+            cancelAtPeriodEnd: true,
+            currentPeriodEnd: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60), // 30 Tage
+            cancelAt: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)
+          }
+        })
+      };
+    }
+
+    // Echte Stripe-API für echte Subscription IDs
     const cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true
     });
@@ -75,4 +95,3 @@ exports.handler = async (event, context) => {
     };
   }
 };
-
