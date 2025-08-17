@@ -13,7 +13,12 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
   const isCurrentPlan = (planId: SubscriptionPlan): boolean => {
     if (planId === 'free') return !subscription || subscription.plan === 'free';
     if (!subscription) return false;
-    return subscription.plan === planId && subscription.status === 'active';
+    
+    // Prüfe ob das Abo noch läuft (auch wenn gekündigt)
+    const now = new Date();
+    const isStillActive = now <= subscription.currentPeriodEnd;
+    
+    return subscription.plan === planId && (subscription.status === 'active' || subscription.status === 'trialing') && isStillActive;
   };
 
   const handleSelectPlan = (plan: PricingPlan) => {
@@ -101,7 +106,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   {plan.id === 'free' 
                     ? 'Kostenloser Plan' 
                     : subscription.cancelAtPeriodEnd 
-                    ? 'Gekündigt - läuft bis zum Ablaufdatum' 
+                    ? `Läuft aus am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}` 
                     : 'Aktueller Plan'}
                 </div>
                 {/* Kündigungsbutton nur für bezahlte Pläne anzeigen */}

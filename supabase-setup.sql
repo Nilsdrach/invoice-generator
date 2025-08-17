@@ -53,3 +53,4 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
+
