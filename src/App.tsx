@@ -494,6 +494,9 @@ function App() {
         {/* Account Tab */}
         {activeTab === 'account' && (
           <div className="max-w-2xl mx-auto">
+            <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded">
+              <strong>DEBUG:</strong> Account Tab ist aktiv! activeTab = {activeTab}
+            </div>
             {user ? (
               // Eingeloggter Nutzer
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -684,18 +687,34 @@ function App() {
         <button
           onClick={() => {
             console.log('Test Button geklickt');
-            console.log('Aktueller Tab:', activeTab);
+            console.log('Aktueller Tab vorher:', activeTab);
             console.log('User:', user);
+            
+            // Direkter Tab-Wechsel
             setActiveTab('account');
-            console.log('Tab auf account gesetzt');
-            // Force re-render
+            
+            // Überprüfe ob der Tab gewechselt wurde
             setTimeout(() => {
-              console.log('Tab nach Timeout:', activeTab);
+              console.log('Tab nach Wechsel:', activeTab);
+              if (activeTab === 'account') {
+                console.log('✅ Tab erfolgreich gewechselt!');
+              } else {
+                console.log('❌ Tab-Wechsel fehlgeschlagen!');
+              }
             }, 100);
           }}
           className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
         >
           Test Account Tab (Aktuell: {activeTab})
+        </button>
+        {/* Direkter Tab-Inhalt Test */}
+        <button
+          onClick={() => {
+            alert(`Aktueller Tab: ${activeTab}\nUser: ${user?.name || 'Kein User'}\nAccount Tab sichtbar: ${activeTab === 'account' ? 'JA' : 'NEIN'}`);
+          }}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm mt-2"
+        >
+          Tab Status prüfen
         </button>
         {/* Test Subscription Button */}
         <button
