@@ -40,11 +40,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
               plan.popular
                 ? 'border-brand-500 bg-brand-50'
                 : 'border-gray-200 hover:border-gray-300'
-            } ${
-              isCurrentPlan(plan.id) && plan.id !== 'free'
-                ? 'ring-2 ring-brand-500 ring-offset-2'
-                : ''
-            }`}
+            }             `}
           >
             {/* Popular Badge */}
             {plan.popular && (
@@ -197,8 +193,10 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                     : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
-                {plan.id === 'free' ? (
+                {plan.id === 'free' && (!subscription || subscription.plan === 'free') ? (
                   'Aktuell aktiv'
+                ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
+                  ''
                 ) : isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

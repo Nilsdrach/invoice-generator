@@ -572,27 +572,15 @@ function App() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Plan</label>
-                            <p className="text-sm text-gray-900 capitalize">{subscription.plan}</p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Status</label>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              subscription.plan === 'free'
-                                ? 'bg-green-100 text-green-800'
-                                : subscription.cancelAtPeriodEnd 
-                                ? 'bg-orange-100 text-orange-800' 
-                                : subscription.status === 'active' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {subscription.plan === 'free'
-                                ? 'Kostenloser Plan'
-                                : subscription.cancelAtPeriodEnd 
-                                ? 'Gekündigt - läuft bis zum Ablaufdatum' 
-                                : subscription.status === 'active' 
-                                ? 'Aktiv' 
-                                : 'Inaktiv'}
-                            </span>
+                            <p className="text-sm text-gray-900">
+                              {subscription.plan === 'free' 
+                                ? 'Free' 
+                                : subscription.plan === 'monthly' 
+                                ? 'Pro Monthly' 
+                                : subscription.plan === 'yearly' 
+                                ? 'Pro Yearly' 
+                                : subscription.plan}
+                            </p>
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Gültig bis</label>
