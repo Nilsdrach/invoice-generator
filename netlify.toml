@@ -17,4 +17,8 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# Wichtig für Netlify Functions
+[functions]
+  node_bundler = "esbuild"
+
 

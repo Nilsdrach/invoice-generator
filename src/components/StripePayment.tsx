@@ -179,6 +179,12 @@ const PaymentForm: React.FC<StripePaymentProps> = ({
           console.log('Payment Intent erfolgreich, Netlify Function Response:', data);
           const stripeId = data.subscription?.stripeSubscriptionId || data.subscription?.id;
           console.log('Extrahierte Stripe Subscription ID:', stripeId);
+          
+          if (!stripeId) {
+            console.error('Keine Stripe Subscription ID in der Response gefunden:', data);
+            throw new Error('Stripe Subscription ID konnte nicht extrahiert werden');
+          }
+          
           onPaymentSuccess({
             email: email,
             name: name,

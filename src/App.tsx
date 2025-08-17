@@ -252,7 +252,7 @@ function App() {
             currentPeriodStart: new Date(dbSubscription.current_period_start),
             currentPeriodEnd: new Date(dbSubscription.current_period_end),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
-            stripeSubscriptionId: stripeSubscriptionId || dbSubscription.stripe_subscription_id || 'test_subscription_id',
+            stripeSubscriptionId: stripeSubscriptionId || null,
             createdAt: new Date(dbSubscription.created_at),
             updatedAt: new Date(dbSubscription.updated_at)
           };
@@ -385,18 +385,16 @@ function App() {
             >
               Preise & Abonnements
             </button>
-            {user && (
-              <button
-                onClick={() => setActiveTab('account')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === 'account'
-                    ? 'border-brand-500 text-brand-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Mein Konto
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('account')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'account'
+                  ? 'border-brand-500 text-brand-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {user ? 'Mein Konto' : 'Anmelden'}
+            </button>
           </nav>
         </div>
       </div>
@@ -572,61 +570,8 @@ function App() {
                     >
                       Abmelden
                     </button>
-                    {/* Debug Button */}
-                    <button
-                      onClick={() => {
-                        console.log('Debug: User:', user);
-                        console.log('Debug: Subscription:', subscription);
-                        console.log('Debug: Stripe Subscription ID:', subscription?.stripeSubscriptionId);
-                        console.log('Debug: LocalStorage User:', localStorage.getItem('user'));
-                        console.log('Debug: LocalStorage Subscription:', localStorage.getItem('subscription'));
-                        
-                        const debugInfo = `
-Debug Info:
-User: ${user?.name} (${user?.email})
-Subscription: ${subscription?.plan} - ${subscription?.status}
-Stripe ID: ${subscription?.stripeSubscriptionId || 'Nicht gesetzt'}
-Created: ${subscription?.createdAt?.toLocaleDateString() || 'N/A'}
-Valid Until: ${subscription?.currentPeriodEnd?.toLocaleDateString() || 'N/A'}
-                        `.trim();
-                        
-                        alert(debugInfo);
-                      }}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm"
-                    >
-                      Debug Info
-                    </button>
-                    {/* Test Subscription Button */}
-                    <button
-                      onClick={() => {
-                        if (!user) {
-                          alert('Bitte zuerst anmelden!');
-                          return;
-                        }
-                        
-                        // Test-Subscription erstellen
-                        const testSubscription: Subscription = {
-                          id: 'test_subscription_id',
-                          userId: user.id,
-                          plan: 'monthly',
-                          status: 'active',
-                          currentPeriodStart: new Date(),
-                          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 Tage
-                          cancelAtPeriodEnd: false,
-                          stripeSubscriptionId: 'test_stripe_subscription_id',
-                          createdAt: new Date(),
-                          updatedAt: new Date()
-                        };
-                        
-                        setSubscription(testSubscription);
-                        localStorage.setItem('subscription', JSON.stringify(testSubscription));
-                        
-                        alert('Test-Subscription erstellt! Jetzt können Sie den Kündigungsbutton testen.');
-                      }}
-                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
-                    >
-                      Test Subscription
-                    </button>
+                    {/* Debug Button entfernt für Produktion */}
+                    {/* Test Subscription Button entfernt für Produktion */}
                   </div>
                 </div>
               </div>
@@ -733,6 +678,8 @@ Valid Until: ${subscription?.currentPeriodEnd?.toLocaleDateString() || 'N/A'}
           </div>
         </div>
       )}
+
+      {/* Test-Buttons entfernt für Netlify-Deploy */}
     </div>
   );
 }

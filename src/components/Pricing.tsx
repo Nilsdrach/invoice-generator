@@ -107,10 +107,37 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                       console.log('Stripe Subscription ID:', subscription.stripeSubscriptionId);
                       
                                               if (!subscription.stripeSubscriptionId) {
-                          console.warn('Keine Stripe Subscription ID gefunden, verwende lokale Kündigung');
-                          // Lokale Kündigung ohne Stripe
-                          if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
-                            try {
+                          alert('Fehler: Stripe Subscription ID nicht gefunden. Bitte kontaktieren Sie den Support.');
+                          return;
+                        }
+
+                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
+                          try {
+                            console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
+                            
+                            // Echte Netlify Function für Stripe-Kündigung
+                            const response = await fetch('/.netlify/functions/cancel-subscription', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                subscriptionId: subscription.stripeSubscriptionId
+                              })
+                            });
+
+                            console.log('Response Status:', response.status);
+
+                            if (!response.ok) {
+                              const errorData = await response.json();
+                              console.error('API Error:', errorData);
+                              throw new Error(errorData.error || 'Fehler beim Kündigen');
+                            }
+
+                            const result = await response.json();
+                            console.log('API Success:', result);
+                            
+                            if (result.success) {
                               // Update local subscription state
                               const updatedSubscription = {
                                 ...subscription,
@@ -127,79 +154,16 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                               localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
                               
                               alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`);
-                            } catch (error) {
-                              console.error('Fehler bei lokaler Kündigung:', error);
-                              alert('Fehler bei der Kündigung. Bitte versuchen Sie es erneut.');
+                            } else {
+                              throw new Error('Kündigung fehlgeschlagen');
                             }
-                          }
-                          return;
-                        }
-
-                      if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`)) {
-                        try {
-                          console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
-                          
-                          // Versuche zuerst die echte Netlify Function, dann die Test-Funktion
-                          let response;
-                          try {
-                            response = await fetch('/.netlify/functions/cancel-subscription', {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              body: JSON.stringify({
-                                subscriptionId: subscription.stripeSubscriptionId
-                              })
-                            });
                           } catch (error) {
-                            console.log('Netlify Function nicht verfügbar, verwende Test-Funktion');
-                            response = await fetch('/.netlify/functions/test-cancel', {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                              subscriptionId: subscription.stripeSubscriptionId
-                            })
-                          });
-
-                          console.log('Response Status:', response.status);
-                          console.log('Response Headers:', response.headers);
-
-                          if (!response.ok) {
-                            const errorData = await response.json();
-                            console.error('API Error:', errorData);
-                            throw new Error(errorData.error || 'Fehler beim Kündigen');
+                            console.error('Fehler beim Kündigen:', error);
+                            alert(`Fehler beim Kündigen des Abonnements: ${error.message}. Bitte versuchen Sie es erneut.`);
                           }
-
-                          const result = await response.json();
-                          console.log('API Success:', result);
-                          
-                          if (result.success) {
-                            // Update local subscription state
-                            const updatedSubscription = {
-                              ...subscription,
-                              cancelAtPeriodEnd: true,
-                              status: 'cancelled' as const
-                            };
-                            
-                            // Update local state
-                            if (onSubscriptionUpdate) {
-                              onSubscriptionUpdate(updatedSubscription);
-                            }
-                            
-                            // Update localStorage
-                            localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
-                            
-                            alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} weiter.`);
-                          } else {
-                            throw new Error('Kündigung fehlgeschlagen');
-                          }
-                        } catch (error) {
-                          console.error('Fehler beim Kündigen:', error);
-                          alert(`Fehler beim Kündigen des Abonnements: ${error.message}. Bitte versuchen Sie es erneut.`);
                         }
-                      }
+
+                      // Doppelter Code entfernt - verwende nur die lokale Kündigung oben
                     }}
                     className="w-full px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                   >
