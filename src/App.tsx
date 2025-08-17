@@ -383,18 +383,9 @@ function App() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Preise & Abonnements
+              Abonnements
             </button>
-            <button
-              onClick={() => setActiveTab('account')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'account'
-                  ? 'border-brand-500 text-brand-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {user ? 'Mein Konto' : 'Anmelden'}
-            </button>
+            {/* Account Tab entfernt - nur über User-Icon erreichbar */}
           </nav>
         </div>
       </div>
@@ -494,9 +485,7 @@ function App() {
         {/* Account Tab */}
         {activeTab === 'account' && (
           <div className="max-w-2xl mx-auto">
-            <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded">
-              <strong>DEBUG:</strong> Account Tab ist aktiv! activeTab = {activeTab}
-            </div>
+            {/* Debug-Anzeige entfernt */}
             {user ? (
               // Eingeloggter Nutzer
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -685,77 +674,9 @@ function App() {
         </div>
       )}
 
-      {/* Test Button für Account Tab */}
-      <div className="fixed top-20 right-4 z-50">
-        <button
-          onClick={() => {
-            console.log('Test Button geklickt');
-            console.log('Aktueller Tab vorher:', activeTab);
-            console.log('User:', user);
-            
-            // Direkter Tab-Wechsel
-            setActiveTab('account');
-            
-            // Überprüfe ob der Tab gewechselt wurde
-            setTimeout(() => {
-              console.log('Tab nach Wechsel:', activeTab);
-              if (activeTab === 'account') {
-                console.log('✅ Tab erfolgreich gewechselt!');
-              } else {
-                console.log('❌ Tab-Wechsel fehlgeschlagen!');
-              }
-            }, 100);
-          }}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-        >
-          Test Account Tab (Aktuell: {activeTab})
-        </button>
-        {/* Direkter Tab-Inhalt Test */}
-        <button
-          onClick={() => {
-            alert(`Aktueller Tab: ${activeTab}\nUser: ${user?.name || 'Kein User'}\nAccount Tab sichtbar: ${activeTab === 'account' ? 'JA' : 'NEIN'}`);
-          }}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm mt-2"
-        >
-          Tab Status prüfen
-        </button>
-        {/* Test Subscription Button */}
-        <button
-          onClick={() => {
-            if (!user) {
-              alert('Bitte zuerst anmelden!');
-              return;
-            }
-            
-            // Test-Subscription mit echter Stripe ID erstellen
-            const testSubscription: Subscription = {
-              id: 'test_subscription_id',
-              userId: user.id,
-              plan: 'monthly',
-              status: 'active',
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 Tage
-              cancelAtPeriodEnd: false,
-              stripeSubscriptionId: 'sub_test_123456789', // Echte Test-Stripe ID
-              createdAt: new Date(),
-              updatedAt: new Date()
-            };
-            
-            console.log('Test-Subscription erstellt:', testSubscription);
-            console.log('currentPeriodEnd ist Date:', testSubscription.currentPeriodEnd instanceof Date);
-            
-            setSubscription(testSubscription);
-            localStorage.setItem('subscription', JSON.stringify(testSubscription));
-            
-            alert('Test-Subscription mit Stripe ID erstellt! Jetzt können Sie den Kündigungsbutton testen.');
-          }}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm mt-2"
-        >
-          Test Subscription
-        </button>
-      </div>
+      {/* Test-Buttons entfernt - Account Tab nur über User-Icon erreichbar */}
 
-      {/* Test-Buttons entfernt für Netlify-Deploy */}
+      
     </div>
   );
 }
