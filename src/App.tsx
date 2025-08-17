@@ -116,17 +116,70 @@ function App() {
     if (subscription && subscription.status === 'active') {
       const now = new Date();
       if (now > new Date(subscription.currentPeriodEnd)) {
-        // Abonnement ist abgelaufen
-        const expiredSubscription: Subscription = {
+        // Abonnement ist abgelaufen - automatisch zum Free Plan wechseln
+        const freeSubscription: Subscription = {
           ...subscription,
-          status: 'expired',
+          plan: 'free',
+          status: 'active',
+          cancelAtPeriodEnd: false,
+          currentPeriodStart: now,
+          currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
           updatedAt: now
         };
-        setSubscription(expiredSubscription);
-        localStorage.setItem('subscription', JSON.stringify(expiredSubscription));
+        setSubscription(freeSubscription);
+        localStorage.setItem('subscription', JSON.stringify(freeSubscription));
+        
+        // Optional: Supabase aktualisieren
+        if (user) {
+          supabaseService.updateSubscription(freeSubscription.id, {
+            plan: 'free',
+            status: 'active',
+            cancel_at_period_end: false
+          }).catch(console.error);
+        }
       }
     }
   }, []); // Nur beim ersten Laden ausführen
+
+  // Regelmäßige Prüfung des Abo-Status (alle 5 Minuten)
+  useEffect(() => {
+    const checkSubscriptionStatus = () => {
+      if (subscription && subscription.status === 'active' && subscription.plan !== 'free') {
+        const now = new Date();
+        if (now > new Date(subscription.currentPeriodEnd)) {
+          // Abonnement ist abgelaufen - automatisch zum Free Plan wechseln
+          const freeSubscription: Subscription = {
+            ...subscription,
+            plan: 'free',
+            status: 'active',
+            cancelAtPeriodEnd: false,
+            currentPeriodStart: now,
+            currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
+            updatedAt: now
+          };
+          setSubscription(freeSubscription);
+          localStorage.setItem('subscription', JSON.stringify(freeSubscription));
+          
+          // Optional: Supabase aktualisieren
+          if (user) {
+            supabaseService.updateSubscription(freeSubscription.id, {
+              plan: 'free',
+              status: 'active',
+              cancel_at_period_end: false
+            }).catch(console.error);
+          }
+        }
+      }
+    };
+
+    // Sofort prüfen
+    checkSubscriptionStatus();
+    
+    // Dann alle 5 Minuten prüfen
+    const interval = setInterval(checkSubscriptionStatus, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [subscription, user]);
 
   // Beim Laden der App: Abgelaufene Subscriptions in Supabase deaktivieren
   useEffect(() => {
@@ -178,36 +231,7 @@ function App() {
   };
 
   const handleSelectPlan = (planId: SubscriptionPlan) => {
-    if (planId === 'free') {
-      // Free Plan auswählen - aktuelle Subscription auf Free setzen
-      if (subscription && subscription.plan !== 'free') {
-        const freeSubscription: Subscription = {
-          ...subscription,
-          plan: 'free',
-          status: 'active',
-          cancelAtPeriodEnd: false,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
-          updatedAt: new Date()
-        };
-        
-        setSubscription(freeSubscription);
-        localStorage.setItem('subscription', JSON.stringify(freeSubscription));
-        
-        // Optional: Supabase aktualisieren
-        if (user) {
-          supabaseService.updateSubscription(freeSubscription.id, {
-            plan: 'free',
-            status: 'active',
-            cancel_at_period_end: false
-          }).catch(console.error);
-        }
-        
-        alert('Sie sind jetzt auf den Free Plan gewechselt!');
-        setActiveTab('invoice');
-      }
-      return;
-    }
+    if (planId === 'free') return; // Free Plan kann nicht ausgewählt werden
     
     setSelectedPlan(planId);
     setShowPayment(true);
@@ -553,13 +577,17 @@ function App() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Status</label>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              subscription.cancelAtPeriodEnd 
+                              subscription.plan === 'free'
+                                ? 'bg-green-100 text-green-800'
+                                : subscription.cancelAtPeriodEnd 
                                 ? 'bg-orange-100 text-orange-800' 
                                 : subscription.status === 'active' 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {subscription.cancelAtPeriodEnd 
+                              {subscription.plan === 'free'
+                                ? 'Kostenloser Plan'
+                                : subscription.cancelAtPeriodEnd 
                                 ? 'Gekündigt - läuft bis zum Ablaufdatum' 
                                 : subscription.status === 'active' 
                                 ? 'Aktiv' 

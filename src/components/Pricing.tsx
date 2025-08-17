@@ -11,8 +11,8 @@ interface PricingProps {
 
 export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSelectPlan, onSubscriptionUpdate }) => {
   const isCurrentPlan = (planId: SubscriptionPlan): boolean => {
-    if (!subscription) return planId === 'free';
     if (planId === 'free') return !subscription || subscription.plan === 'free';
+    if (!subscription) return false;
     return subscription.plan === planId && subscription.status === 'active';
   };
 
@@ -92,17 +92,24 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
 
             {/* Action Button */}
             {isCurrentPlan(plan.id) ? (
-              // Aktueller Plan - Zeige Status und Kündigungsbutton
+              // Aktueller Plan - Zeige Status und Kündigungsbutton (nur für bezahlte Pläne)
               <div className="space-y-3">
                 <div className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm sm:text-base flex items-center justify-center gap-2 ${
-                  subscription.cancelAtPeriodEnd 
+                  plan.id === 'free' 
+                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    : subscription.cancelAtPeriodEnd 
                     ? 'bg-orange-100 text-orange-700 border border-orange-300' 
                     : 'bg-gray-100 text-gray-500'
                 }`}>
                   <Check className="w-4 h-4" />
-                  {subscription.cancelAtPeriodEnd ? 'Gekündigt - läuft bis zum Ablaufdatum' : 'Aktueller Plan'}
+                  {plan.id === 'free' 
+                    ? 'Kostenloser Plan' 
+                    : subscription.cancelAtPeriodEnd 
+                    ? 'Gekündigt - läuft bis zum Ablaufdatum' 
+                    : 'Aktueller Plan'}
                 </div>
-                {subscription && !subscription.cancelAtPeriodEnd && (
+                {/* Kündigungsbutton nur für bezahlte Pläne anzeigen */}
+                {subscription && !subscription.cancelAtPeriodEnd && plan.id !== 'free' && (
                   <button
                     onClick={async (e) => {
                       e.preventDefault();
@@ -181,19 +188,17 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
               // Nicht aktueller Plan - Zeige Aktionsbutton
               <button
                 onClick={() => handleSelectPlan(plan)}
-                disabled={isLoading || (plan.id === 'free' && (!subscription || (subscription.plan === 'free' && !subscription.cancelAtPeriodEnd)))}
+                disabled={isLoading || plan.id === 'free'}
                 className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm sm:text-base transition-colors ${
-                  plan.id === 'free' && (!subscription || (subscription.plan === 'free' && !subscription.cancelAtPeriodEnd))
+                  plan.id === 'free'
                     ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
                     : plan.popular
                     ? 'bg-brand-500 text-white hover:bg-brand-600'
                     : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
-                {plan.id === 'free' && (!subscription || subscription.plan === 'free') ? (
+                {plan.id === 'free' ? (
                   'Aktuell aktiv'
-                ) : plan.id === 'free' && subscription && subscription.cancelAtPeriodEnd ? (
-                  'Zum Free Plan wechseln'
                 ) : isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
