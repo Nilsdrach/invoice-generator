@@ -152,7 +152,6 @@ function App() {
           .from('subscriptions')
           .select('*')
           .eq('user_id', dbUser.id)
-          .eq('status', 'active')
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -192,6 +191,26 @@ function App() {
           
           console.log('Erwartetes Ablaufdatum:', expectedEndDate.toLocaleDateString('de-DE'));
           console.log('Ist das Datum korrekt?', appSubscription.currentPeriodEnd.getTime() === expectedEndDate.getTime());
+          
+          // Status korrekt setzen basierend auf Datum und cancel_at_period_end
+          if (dbSubscription.cancel_at_period_end) {
+            // Abo ist gekündigt
+            if (now > appSubscription.currentPeriodEnd) {
+              // Abo ist abgelaufen
+              appSubscription.status = 'expired';
+              appSubscription.plan = 'free';
+            } else {
+              // Abo läuft noch bis zum Ablaufdatum
+              appSubscription.status = 'active';
+            }
+          } else if (now > appSubscription.currentPeriodEnd) {
+            // Abo ist abgelaufen
+            appSubscription.status = 'expired';
+            appSubscription.plan = 'free';
+          }
+          
+          console.log('Korrigierter Status:', appSubscription.status);
+          console.log('Korrigierter Plan:', appSubscription.plan);
           
           // Falls das Datum falsch ist, korrigieren
           if (Math.abs(appSubscription.currentPeriodEnd.getTime() - expectedEndDate.getTime()) > 24 * 60 * 60 * 1000) { // Mehr als 1 Tag Unterschied
