@@ -37,7 +37,8 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="flex justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-4xl">
         {PRICING_PLANS.map((plan) => (
           <div
             key={plan.id}
@@ -95,20 +96,20 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
             {isCurrentPlan(plan.id) ? (
               // Aktueller Plan - Zeige Status und Kündigungsbutton (nur für bezahlte Pläne)
               <div className="space-y-3">
-                <div className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm sm:text-base flex items-center justify-center gap-2 ${
+                <button className={`w-full py-3 px-4 rounded-lg font-medium text-sm sm:text-base flex items-center justify-center gap-2 ${
                   plan.id === 'free' 
-                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    ? 'bg-green-100 text-green-700 border border-green-300 cursor-not-allowed'
                     : subscription.cancelAtPeriodEnd 
-                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
-                    : 'bg-gray-100 text-gray-500'
+                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300 cursor-not-allowed' 
+                    : 'bg-gray-100 text-gray-500 cursor-not-allowed'
                 }`}>
                   <Check className="w-4 h-4" />
                   {plan.id === 'free' 
-                    ? 'Kostenloser Plan' 
+                    ? 'Aktuell aktiv' 
                     : subscription.cancelAtPeriodEnd && subscription.plan !== 'free'
                     ? `Läuft aus am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}` 
                     : 'Aktueller Plan'}
-                </div>
+                </button>
                 {/* Kündigungsbutton nur für bezahlte Pläne anzeigen, die noch nicht gekündigt sind */}
                 {subscription && !subscription.cancelAtPeriodEnd && plan.id !== 'free' ? (
                   <button
@@ -179,17 +180,13 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
 
                       // Doppelter Code entfernt
                     }}
-                    className="w-full px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                    className="w-full px-4 py-3 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                   >
                     Abonnement kündigen
                   </button>
                 ) : (
-                  // Für gekündigte Abos: Zeige Info-Text
-                  subscription && subscription.cancelAtPeriodEnd ? (
-                    <div className="text-center text-sm text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
-                      Abonnement läuft bis zum Ablaufdatum weiter
-                    </div>
-                  ) : null
+                  // Für gekündigte Abos: Kein Info-Text mehr nötig
+                  null
                 )}
               </div>
             ) : (
@@ -197,7 +194,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
               <button
                 onClick={() => handleSelectPlan(plan)}
                 disabled={isLoading || plan.id === 'free' || (isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd)}
-                className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm sm:text-base transition-colors ${
+                className={`w-full py-3 px-4 rounded-lg font-medium text-sm sm:text-base transition-colors ${
                   plan.id === 'free'
                     ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
                     : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd
@@ -210,7 +207,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                 {plan.id === 'free' && (!subscription || subscription.plan === 'free') ? (
                   'Aktuell aktiv'
                 ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
-                  ''
+                  'Aktuell aktiv'
                 ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
                   `Abonnement läuft am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} ab`
                 ) : isLoading ? (
@@ -228,6 +225,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
             )}
           </div>
         ))}
+      </div>
       </div>
 
       {/* Additional Info */}

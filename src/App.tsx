@@ -95,6 +95,7 @@ function App() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'invoice' | 'pricing' | 'account'>('invoice');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   // Rechnung im LocalStorage speichern
   useEffect(() => {
@@ -674,45 +675,158 @@ function App() {
                       Melden Sie sich an oder erstellen Sie ein Konto, um Ihre Einstellungen zu verwalten.
                     </p>
                     
-                    {/* Einfaches Login-Formular */}
-                    <div className="max-w-sm mx-auto space-y-4">
-                      <input
-                        type="email"
-                        placeholder="E-Mail-Adresse"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Name"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                      />
-                      <button
-                        onClick={() => {
-                          // Einfacher Login ohne Abo
-                          const email = document.querySelector('input[type="email"]') as HTMLInputElement;
-                          const name = document.querySelector('input[type="text"]') as HTMLInputElement;
-                          
-                          if (email?.value && name?.value) {
-                            // User erstellen/anmelden
-                            const newUser: User = {
-                              id: Date.now().toString(),
-                              email: email.value,
-                              name: name.value,
-                              createdAt: new Date(),
-                              updatedAt: new Date()
-                            };
-                            
-                            setUser(newUser);
-                            localStorage.setItem('user', JSON.stringify(newUser));
-                            
-                            // Zurück zum Invoice-Tab
-                            setActiveTab('invoice');
-                          }
-                        }}
-                        className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-                      >
-                        Anmelden / Registrieren
-                      </button>
+                    {/* Login/Register Tabs */}
+                    <div className="max-w-sm mx-auto">
+                      <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
+                        <button
+                          onClick={() => setAuthMode('login')}
+                          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                            authMode === 'login'
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Anmelden
+                        </button>
+                        <button
+                          onClick={() => setAuthMode('register')}
+                          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                            authMode === 'register'
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          Registrieren
+                        </button>
+                      </div>
+                      
+                      {/* Login Form */}
+                      {authMode === 'login' && (
+                        <div className="space-y-4">
+                          <input
+                            type="email"
+                            id="login-email"
+                            placeholder="E-Mail-Adresse"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                          />
+                          <input
+                            type="password"
+                            id="login-password"
+                            placeholder="Passwort"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => {
+                              const email = (document.getElementById('login-email') as HTMLInputElement)?.value;
+                              const password = (document.getElementById('login-password') as HTMLInputElement)?.value;
+                              
+                              if (!email || !password) {
+                                alert('Bitte füllen Sie alle Felder aus.');
+                                return;
+                              }
+                              
+                              // Einfacher Login (später mit echten API-Calls)
+                              const savedUser = localStorage.getItem('user');
+                              if (savedUser) {
+                                const user = JSON.parse(savedUser);
+                                if (user.email === email && user.password === password) {
+                                  setUser(user);
+                                  setActiveTab('invoice');
+                                  return;
+                                }
+                              }
+                              
+                              alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
+                            }}
+                            className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                          >
+                            Anmelden
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Register Form */}
+                      {authMode === 'register' && (
+                        <div className="space-y-4">
+                          <input
+                            type="text"
+                            id="register-name"
+                            placeholder="Vollständiger Name"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                          />
+                          <input
+                            type="email"
+                            id="register-email"
+                            placeholder="E-Mail-Adresse"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                          />
+                          <input
+                            type="password"
+                            id="register-password"
+                            placeholder="Passwort (mindestens 6 Zeichen)"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                          />
+                          <input
+                            type="password"
+                            id="register-password-confirm"
+                            placeholder="Passwort bestätigen"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => {
+                              const name = (document.getElementById('register-name') as HTMLInputElement)?.value;
+                              const email = (document.getElementById('register-email') as HTMLInputElement)?.value;
+                              const password = (document.getElementById('register-password') as HTMLInputElement)?.value;
+                              const passwordConfirm = (document.getElementById('register-password-confirm') as HTMLInputElement)?.value;
+                              
+                              if (!name || !email || !password || !passwordConfirm) {
+                                alert('Bitte füllen Sie alle Felder aus.');
+                                return;
+                              }
+                              
+                              if (password.length < 6) {
+                                alert('Das Passwort muss mindestens 6 Zeichen lang sein.');
+                                return;
+                              }
+                              
+                              if (password !== passwordConfirm) {
+                                alert('Die Passwörter stimmen nicht überein.');
+                                return;
+                              }
+                              
+                              // Prüfen ob E-Mail bereits existiert
+                              const savedUser = localStorage.getItem('user');
+                              if (savedUser) {
+                                const existingUser = JSON.parse(savedUser);
+                                if (existingUser.email === email) {
+                                  alert('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.');
+                                  setAuthMode('login');
+                                  return;
+                                }
+                              }
+                              
+                              // Neuen User erstellen
+                              const newUser: User = {
+                                id: Date.now().toString(),
+                                email: email,
+                                name: name,
+                                password: password, // In Produktion würde das gehashed werden
+                                createdAt: new Date(),
+                                updatedAt: new Date()
+                              };
+                              
+                              setUser(newUser);
+                              localStorage.setItem('user', JSON.stringify(newUser));
+                              
+                              alert('Konto erfolgreich erstellt! Sie sind jetzt angemeldet.');
+                              setActiveTab('invoice');
+                            }}
+                            className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                          >
+                            Konto erstellen
+                          </button>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="mt-4 text-center">

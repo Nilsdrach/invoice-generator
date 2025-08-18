@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  password?: string; // Optional für bestehende User
   company?: string;
   subscription?: Subscription;
   createdAt: Date;
