@@ -121,30 +121,12 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                       console.log('Stripe Subscription ID:', subscription.stripeSubscriptionId);
                       
                       if (!subscription.stripeSubscriptionId) {
-                        alert('Fehler: Stripe Subscription ID nicht gefunden. Bitte kontaktieren Sie den Support.');
+                        // Kein Popup - einfach nichts tun
                         return;
                       }
 
-                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${(() => {
-                          // Einheitliche Datumsberechnung: Verwende immer das ursprüngliche Ablaufdatum
-                          if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
-                            return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
-                          } else {
-                            // Fallback: Datum basierend auf Plan berechnen
-                            const now = new Date();
-                            if (subscription.plan === 'yearly') {
-                              const oneYearLater = new Date(now);
-                              oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-                              return oneYearLater.toLocaleDateString('de-DE');
-                            } else if (subscription.plan === 'monthly') {
-                              const oneMonthLater = new Date(now);
-                              oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-                              return oneMonthLater.toLocaleDateString('de-DE');
-                            }
-                            return 'Unbekanntes Datum';
-                          }
-                        })()} weiter.`)) {
-                          try {
+                        // Direkt kündigen ohne Bestätigung
+                        try {
                             console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
                             
                             // Echte Netlify Function für Stripe-Kündigung
@@ -205,12 +187,15 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                                   return 'Unbekanntes Datum';
                                 }
                               })()} weiter.`);
+                              
+                              // Seite neu laden um alle Daten zu aktualisieren
+                              window.location.reload();
                             } else {
                               throw new Error('Kündigung fehlgeschlagen');
                             }
                           } catch (error) {
                             console.error('Fehler beim Kündigen:', error);
-                            alert(`Fehler beim Kündigen des Abonnements: ${error.message}. Bitte versuchen Sie es erneut.`);
+                            // Kein Popup - einfach nichts tun
                           }
                         }
 

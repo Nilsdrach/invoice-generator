@@ -169,7 +169,23 @@ function App() {
             plan: dbSubscription.plan,
             status: dbSubscription.status,
             currentPeriodStart: new Date(dbSubscription.current_period_start),
-            currentPeriodEnd: new Date(dbSubscription.current_period_end),
+            currentPeriodEnd: (() => {
+              // Korrektes Ablaufdatum berechnen basierend auf Plan
+              const now = new Date();
+              if (dbSubscription.plan === 'yearly') {
+                // 1 Jahr ab jetzt
+                const oneYearLater = new Date(now);
+                oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+                return oneYearLater;
+              } else if (dbSubscription.plan === 'monthly') {
+                // 1 Monat ab jetzt
+                const oneMonthLater = new Date(now);
+                oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+                return oneMonthLater;
+              } else {
+                return new Date(dbSubscription.current_period_end);
+              }
+            })(),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
             stripeSubscriptionId: dbSubscription.stripe_subscription_id,
             createdAt: new Date(dbSubscription.created_at),
@@ -199,6 +215,27 @@ function App() {
           
           console.log('Korrigierter Status:', appSubscription.status);
           console.log('Korrigierter Plan:', appSubscription.plan);
+          
+          // Datum in der Datenbank korrigieren, falls es falsch ist
+          const expectedEndDate = appSubscription.currentPeriodEnd;
+          const dbEndDate = new Date(dbSubscription.current_period_end);
+          
+          if (Math.abs(expectedEndDate.getTime() - dbEndDate.getTime()) > 24 * 60 * 60 * 1000) { // Mehr als 1 Tag Unterschied
+            console.log('Datum in Datenbank wird korrigiert...');
+            console.log('DB Datum:', dbEndDate.toLocaleDateString('de-DE'));
+            console.log('Korrektes Datum:', expectedEndDate.toLocaleDateString('de-DE'));
+            
+            // In der Datenbank aktualisieren
+            await supabase
+              .from('subscriptions')
+              .update({ 
+                current_period_end: expectedEndDate.toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', dbSubscription.id);
+            
+            console.log('Datum in Datenbank korrigiert');
+          }
           
           setSubscription(appSubscription);
           localStorage.setItem('subscription', JSON.stringify(appSubscription));
@@ -460,6 +497,9 @@ function App() {
 
           alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
           setActiveTab('invoice');
+          
+          // Seite neu laden um alle Daten zu aktualisieren
+          window.location.reload();
         } catch (error) {
           console.error('Fehler beim Erstellen des Abonnements:', error);
           alert('Fehler beim Erstellen des Abonnements. Bitte versuchen Sie es erneut.');
@@ -842,7 +882,7 @@ function App() {
                               const password = (document.getElementById('login-password') as HTMLInputElement)?.value;
                               
                               if (!email || !password) {
-                                alert('Bitte füllen Sie alle Felder aus.');
+                                // Kein Popup - einfach nichts tun
                                 return;
                               }
                               
@@ -867,8 +907,11 @@ function App() {
                                     loadSubscriptionForUser(appUser.email);
                                     
                                     setActiveTab('invoice');
+                                    
+                                    // Seite neu laden um alle Daten zu aktualisieren
+                                    window.location.reload();
                                   } else {
-                                    alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
+                                    // Kein Popup - einfach nichts tun
                                   }
                                 })
                                 .catch(error => {
@@ -918,17 +961,17 @@ function App() {
                               const passwordConfirm = (document.getElementById('register-password-confirm') as HTMLInputElement)?.value;
                               
                               if (!name || !email || !password || !passwordConfirm) {
-                                alert('Bitte füllen Sie alle Felder aus.');
+                                // Kein Popup - einfach nichts tun
                                 return;
                               }
                               
                               if (password.length < 6) {
-                                alert('Das Passwort muss mindestens 6 Zeichen lang sein.');
+                                // Kein Popup - einfach nichts tun
                                 return;
                               }
                               
                               if (password !== passwordConfirm) {
-                                alert('Die Passwörter stimmen nicht überein.');
+                                // Kein Popup - einfach nichts tun
                                 return;
                               }
                               
@@ -951,6 +994,9 @@ function App() {
                                     
                                     alert('Konto erfolgreich erstellt! Sie sind jetzt angemeldet.');
                                     setActiveTab('invoice');
+                                    
+                                    // Seite neu laden um alle Daten zu aktualisieren
+                                    window.location.reload();
                                   }
                                 })
                                 .catch(error => {
