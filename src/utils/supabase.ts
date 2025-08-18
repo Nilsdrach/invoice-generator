@@ -10,6 +10,7 @@ export interface DatabaseUser {
   id: string;
   email: string;
   name: string;
+  password: string; // Passwort für Authentifizierung
   created_at: string;
   updated_at: string;
 }

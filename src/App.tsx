@@ -758,18 +758,31 @@ function App() {
                                 return;
                               }
                               
-                              // Einfacher Login (später mit echten API-Calls)
-                              const savedUser = localStorage.getItem('user');
-                              if (savedUser) {
-                                const user = JSON.parse(savedUser);
-                                if (user.email === email && user.password === password) {
-                                  setUser(user);
-                                  setActiveTab('invoice');
-                                  return;
-                                }
-                              }
-                              
-                              alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
+                              // Echter Login über Supabase
+                              supabaseService.loginUser(email, password)
+                                .then(user => {
+                                  if (user) {
+                                    // Login erfolgreich
+                                    const appUser: User = {
+                                      id: user.id,
+                                      email: user.email,
+                                      name: user.name,
+                                      password: user.password,
+                                      createdAt: new Date(user.created_at),
+                                      updatedAt: new Date(user.updated_at)
+                                    };
+                                    
+                                    setUser(appUser);
+                                    localStorage.setItem('user', JSON.stringify(appUser));
+                                    setActiveTab('invoice');
+                                  } else {
+                                    alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
+                                  }
+                                })
+                                .catch(error => {
+                                  console.error('Login-Fehler:', error);
+                                  alert('Fehler beim Login. Bitte versuchen Sie es erneut.');
+                                });
                             }}
                             className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
                           >
@@ -827,32 +840,36 @@ function App() {
                                 return;
                               }
                               
-                              // Prüfen ob E-Mail bereits existiert
-                              const savedUser = localStorage.getItem('user');
-                              if (savedUser) {
-                                const existingUser = JSON.parse(savedUser);
-                                if (existingUser.email === email) {
-                                  alert('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.');
-                                  setAuthMode('login');
-                                  return;
-                                }
-                              }
-                              
-                              // Neuen User erstellen
-                              const newUser: User = {
-                                id: Date.now().toString(),
-                                email: email,
-                                name: name,
-                                password: password, // In Produktion würde das gehashed werden
-                                createdAt: new Date(),
-                                updatedAt: new Date()
-                              };
-                              
-                              setUser(newUser);
-                              localStorage.setItem('user', JSON.stringify(newUser));
-                              
-                              alert('Konto erfolgreich erstellt! Sie sind jetzt angemeldet.');
-                              setActiveTab('invoice');
+                              // Neuen User über Supabase erstellen
+                              supabaseService.registerUser(email, name, password)
+                                .then(user => {
+                                  if (user) {
+                                    // Registrierung erfolgreich
+                                    const appUser: User = {
+                                      id: user.id,
+                                      email: user.email,
+                                      name: user.name,
+                                      password: user.password,
+                                      createdAt: new Date(user.created_at),
+                                      updatedAt: new Date(user.updated_at)
+                                    };
+                                    
+                                    setUser(appUser);
+                                    localStorage.setItem('user', JSON.stringify(appUser));
+                                    
+                                    alert('Konto erfolgreich erstellt! Sie sind jetzt angemeldet.');
+                                    setActiveTab('invoice');
+                                  }
+                                })
+                                .catch(error => {
+                                  console.error('Registrierungsfehler:', error);
+                                  if (error.message.includes('existiert bereits')) {
+                                    alert('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.');
+                                    setAuthMode('login');
+                                  } else {
+                                    alert('Fehler bei der Registrierung. Bitte versuchen Sie es erneut.');
+                                  }
+                                });
                             }}
                             className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
                           >

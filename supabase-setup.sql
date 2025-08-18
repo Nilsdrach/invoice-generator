@@ -4,8 +4,9 @@
 -- Users Tabelle
 CREATE TABLE IF NOT EXISTS users (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL, -- Passwort für Authentifizierung
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -14,12 +15,12 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  plan TEXT NOT NULL CHECK (plan IN ('monthly', 'yearly')),
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled')),
+  plan VARCHAR(50) NOT NULL CHECK (plan IN ('monthly', 'yearly')),
+  status VARCHAR(50) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled')),
   current_period_start TIMESTAMP WITH TIME ZONE NOT NULL,
   current_period_end TIMESTAMP WITH TIME ZONE NOT NULL,
   cancel_at_period_end BOOLEAN DEFAULT FALSE,
-  stripe_subscription_id TEXT,
+  stripe_subscription_id VARCHAR(255),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -52,6 +53,7 @@ CREATE POLICY "Users can update own subscriptions" ON subscriptions
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_id ON subscriptions(stripe_subscription_id);
 
 
 

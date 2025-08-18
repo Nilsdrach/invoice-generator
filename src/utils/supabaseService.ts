@@ -2,6 +2,59 @@ import { supabase, DatabaseUser, DatabaseSubscription } from './supabase';
 
 // User Management
 export const supabaseService = {
+  // User registrieren
+  async registerUser(email: string, name: string, password: string): Promise<DatabaseUser | null> {
+    try {
+      // Prüfen ob User bereits existiert
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      if (existingUser) {
+        throw new Error('Ein Konto mit dieser E-Mail-Adresse existiert bereits.');
+      }
+
+      // Neuen User erstellen
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert({
+          email,
+          name,
+          password, // In Produktion würde das gehashed werden
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return newUser;
+    } catch (error) {
+      console.error('Fehler beim Registrieren des Users:', error);
+      throw error;
+    }
+  },
+
+  // User anmelden
+  async loginUser(email: string, password: string): Promise<DatabaseUser | null> {
+    try {
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (error) throw error;
+      return user;
+    } catch (error) {
+      console.error('Fehler beim Login des Users:', error);
+      return null;
+    }
+  },
+
   // User erstellen oder aktualisieren
   async upsertUser(email: string, name: string): Promise<DatabaseUser | null> {
     try {
