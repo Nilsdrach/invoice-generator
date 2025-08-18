@@ -346,12 +346,18 @@ function App() {
             status: dbSubscription.status,
             currentPeriodStart: dbSubscription.current_period_start ? new Date(dbSubscription.current_period_start * 1000) : new Date(),
             currentPeriodEnd: dbSubscription.current_period_end ? new Date(dbSubscription.current_period_end * 1000) : (() => {
-              // Fallback: 1 Jahr ab jetzt für yearly, 1 Monat für monthly
+              // Fallback: Korrektes Datum basierend auf Plan berechnen
               const now = new Date();
               if (dbSubscription.plan === 'yearly') {
-                return new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+                // 1 Jahr ab jetzt
+                const oneYearLater = new Date(now);
+                oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+                return oneYearLater;
               } else if (dbSubscription.plan === 'monthly') {
-                return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                // 1 Monat ab jetzt
+                const oneMonthLater = new Date(now);
+                oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+                return oneMonthLater;
               }
               return now;
             })(),

@@ -126,10 +126,20 @@ export const supabaseService = {
   ): Promise<DatabaseSubscription | null> {
     try {
       const currentDate = new Date();
-      const periodEnd = new Date(
-        currentDate.getTime() + 
-        (plan === 'monthly' ? 30 * 24 * 60 * 60 * 1000 : 365 * 24 * 60 * 60 * 1000)
-      );
+      
+      // Korrektes Ablaufdatum berechnen
+      let periodEnd: Date;
+      if (plan === 'yearly') {
+        // 1 Jahr ab jetzt
+        periodEnd = new Date(currentDate);
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      } else if (plan === 'monthly') {
+        // 1 Monat ab jetzt
+        periodEnd = new Date(currentDate);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+      } else {
+        periodEnd = currentDate;
+      }
 
       const { data: subscription, error } = await supabase
         .from('subscriptions')

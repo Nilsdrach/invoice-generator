@@ -125,7 +125,24 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                         return;
                       }
 
-                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime()) ? new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE') : 'Unbekanntes Datum'} weiter.`)) {
+                        if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${(() => {
+                          if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
+                            return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
+                          } else {
+                            // Fallback: Datum basierend auf Plan berechnen
+                            const now = new Date();
+                            if (subscription.plan === 'yearly') {
+                              const oneYearLater = new Date(now);
+                              oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+                              return oneYearLater.toLocaleDateString('de-DE');
+                            } else if (subscription.plan === 'monthly') {
+                              const oneMonthLater = new Date(now);
+                              oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+                              return oneMonthLater.toLocaleDateString('de-DE');
+                            }
+                            return 'Unbekanntes Datum';
+                          }
+                        })()} weiter.`)) {
                           try {
                             console.log('Sende Kündigungsanfrage an:', subscription.stripeSubscriptionId);
                             
@@ -168,7 +185,24 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                               // Update localStorage
                               localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
                               
-                              alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime()) ? new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE') : 'Unbekanntes Datum'} weiter.`);
+                              alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${(() => {
+                                if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
+                                  return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
+                                } else {
+                                  // Fallback: Datum basierend auf Plan berechnen
+                                  const now = new Date();
+                                  if (subscription.plan === 'yearly') {
+                                    const oneYearLater = new Date(now);
+                                    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+                                    return oneYearLater.toLocaleDateString('de-DE');
+                                  } else if (subscription.plan === 'monthly') {
+                                    const oneMonthLater = new Date(now);
+                                    oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+                                    return oneMonthLater.toLocaleDateString('de-DE');
+                                  }
+                                  return 'Unbekanntes Datum';
+                                }
+                              })()} weiter.`);
                             } else {
                               throw new Error('Kündigung fehlgeschlagen');
                             }
@@ -213,7 +247,24 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
                     'Aktuell aktiv'
                   ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
-                    `Abonnement läuft am ${subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime()) ? new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE') : 'Unbekanntes Datum'} ab`
+                    `Abonnement läuft am ${(() => {
+                      if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
+                        return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
+                      } else {
+                        // Fallback: Datum basierend auf Plan berechnen
+                        const now = new Date();
+                        if (subscription.plan === 'yearly') {
+                          const oneYearLater = new Date(now);
+                          oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+                          return oneYearLater.toLocaleDateString('de-DE');
+                        } else if (subscription.plan === 'monthly') {
+                          const oneMonthLater = new Date(now);
+                          oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+                          return oneMonthLater.toLocaleDateString('de-DE');
+                        }
+                        return 'Unbekanntes Datum';
+                      }
+                    })()} ab`
                   ) : isLoading ? (
                     <div className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
