@@ -148,16 +148,16 @@ function App() {
           
           // Korrektes Ablaufdatum berechnen basierend auf Plan
           let currentPeriodEnd: Date;
-          const now = new Date();
+          const periodStart = new Date(dbSubscription.current_period_start);
           
           if (dbSubscription.plan === 'yearly') {
-            // 1 Jahr ab jetzt
-            currentPeriodEnd = new Date(now);
+            // 1 Jahr ab dem Startdatum
+            currentPeriodEnd = new Date(periodStart);
             currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
             currentPeriodEnd.setHours(23, 59, 59, 999); // Ende des Tages
           } else if (dbSubscription.plan === 'monthly') {
-            // 1 Monat ab jetzt
-            currentPeriodEnd = new Date(now);
+            // 1 Monat ab dem Startdatum
+            currentPeriodEnd = new Date(periodStart);
             currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
             currentPeriodEnd.setHours(23, 59, 59, 999); // Ende des Tages
           } else {
