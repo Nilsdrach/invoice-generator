@@ -95,27 +95,7 @@ function App() {
     return null;
   });
 
-  const [subscription, setSubscription] = useState<Subscription | null>(() => {
-    const savedSubscription = localStorage.getItem('subscription');
-    if (savedSubscription) {
-      const parsed = JSON.parse(savedSubscription);
-      // Datumsfelder korrekt konvertieren
-      if (parsed.currentPeriodStart) {
-        parsed.currentPeriodStart = new Date(parsed.currentPeriodStart);
-      }
-      if (parsed.currentPeriodEnd) {
-        parsed.currentPeriodEnd = new Date(parsed.currentPeriodEnd);
-      }
-      if (parsed.createdAt) {
-        parsed.createdAt = new Date(parsed.createdAt);
-      }
-      if (parsed.updatedAt) {
-        parsed.updatedAt = new Date(parsed.updatedAt);
-      }
-      return parsed;
-    }
-    return null;
-  });
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
 
   // UI state
   const [showPricing, setShowPricing] = useState(false);
@@ -137,17 +117,21 @@ function App() {
       localStorage.setItem('user', JSON.stringify(user));
     }
     if (subscription) {
-      localStorage.setItem('subscription', JSON.stringify(subscription));
+      
     }
   }, [user, subscription]);
 
   // Funktion zum Laden der Subscription für einen User
   const loadSubscriptionForUser = async (email: string) => {
     try {
+      console.log('Lade Subscription für User:', email);
+      
       // Versuche die Subscription aus der Datenbank zu laden
       const dbUser = await supabaseService.getUserByEmail(email);
       if (dbUser) {
-        // Suche nach aktiven Subscriptions für diesen User
+        console.log('User gefunden:', dbUser);
+        
+        // Suche nach allen Subscriptions für diesen User (nicht nur active)
         const { data: subscriptions, error } = await supabase
           .from('subscriptions')
           .select('*')
@@ -155,13 +139,30 @@ function App() {
           .order('created_at', { ascending: false })
           .limit(1);
 
+        console.log('Subscriptions gefunden:', subscriptions);
+        console.log('Supabase Error:', error);
+
         if (!error && subscriptions && subscriptions.length > 0) {
           const dbSubscription = subscriptions[0];
+          console.log('Verwende Subscription:', dbSubscription);
           
-          // Debug: Alle Daten anzeigen
-          console.log('Raw Subscription aus Datenbank:', dbSubscription);
-          console.log('current_period_end (raw):', dbSubscription.current_period_end);
-          console.log('current_period_end (Date):', new Date(dbSubscription.current_period_end));
+          // Korrektes Ablaufdatum berechnen basierend auf Plan
+          let currentPeriodEnd: Date;
+          const now = new Date();
+          
+          if (dbSubscription.plan === 'yearly') {
+            // 1 Jahr ab jetzt
+            currentPeriodEnd = new Date(now);
+            currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+            currentPeriodEnd.setHours(23, 59, 59, 999); // Ende des Tages
+          } else if (dbSubscription.plan === 'monthly') {
+            // 1 Monat ab jetzt
+            currentPeriodEnd = new Date(now);
+            currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+            currentPeriodEnd.setHours(23, 59, 59, 999); // Ende des Tages
+          } else {
+            currentPeriodEnd = new Date(dbSubscription.current_period_end);
+          }
           
           const appSubscription: Subscription = {
             id: dbSubscription.id,
@@ -169,23 +170,7 @@ function App() {
             plan: dbSubscription.plan,
             status: dbSubscription.status,
             currentPeriodStart: new Date(dbSubscription.current_period_start),
-            currentPeriodEnd: (() => {
-              // Korrektes Ablaufdatum berechnen basierend auf Plan
-              const now = new Date();
-              if (dbSubscription.plan === 'yearly') {
-                // 1 Jahr ab jetzt
-                const oneYearLater = new Date(now);
-                oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-                return oneYearLater;
-              } else if (dbSubscription.plan === 'monthly') {
-                // 1 Monat ab jetzt
-                const oneMonthLater = new Date(now);
-                oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-                return oneMonthLater;
-              } else {
-                return new Date(dbSubscription.current_period_end);
-              }
-            })(),
+            currentPeriodEnd: currentPeriodEnd,
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
             stripeSubscriptionId: dbSubscription.stripe_subscription_id,
             createdAt: new Date(dbSubscription.created_at),
@@ -216,7 +201,7 @@ function App() {
           console.log('Korrigierter Status:', appSubscription.status);
           console.log('Korrigierter Plan:', appSubscription.plan);
           
-          // Datum in der Datenbank korrigieren, falls es falsch ist
+          // Datum in der Datenbank aktualisieren, falls es falsch ist
           const expectedEndDate = appSubscription.currentPeriodEnd;
           const dbEndDate = new Date(dbSubscription.current_period_end);
           
@@ -238,13 +223,14 @@ function App() {
           }
           
           setSubscription(appSubscription);
-          localStorage.setItem('subscription', JSON.stringify(appSubscription));
+          console.log('Subscription gesetzt');
         } else {
           // Keine aktive Subscription gefunden
           console.log('Keine aktive Subscription für User gefunden');
           setSubscription(null);
-          localStorage.removeItem('subscription');
         }
+      } else {
+        console.log('Kein User gefunden für E-Mail:', email);
       }
     } catch (error) {
       console.error('Fehler beim Laden der Subscription für User:', error);
@@ -255,9 +241,38 @@ function App() {
   useEffect(() => {
     // Beim App-Start: Subscription aus der Datenbank laden
     if (user && user.email) {
+      console.log('App startet - lade Subscription für User:', user.email);
       loadSubscriptionForUser(user.email);
+    } else {
+      console.log('Kein User beim App-Start - keine Subscription zu laden');
     }
   }, [user]); // Nur ausführen wenn sich der User ändert
+
+  // Beim Laden der App: Subscription aus der Datenbank laden, falls sie im localStorage fehlt
+  useEffect(() => {
+    const loadMissingSubscription = async () => {
+      if (user && user.email && !subscription) {
+        console.log('Subscription fehlt - lade aus Datenbank...');
+        await loadSubscriptionForUser(user.email);
+      }
+    };
+
+    loadMissingSubscription();
+  }, [user, subscription]); // Ausführen wenn sich User oder Subscription ändert
+
+  // Beim Laden der Seite: Subscription aus der Datenbank laden
+  useEffect(() => {
+    const loadSubscriptionOnPageLoad = async () => {
+      if (user && user.email) {
+        console.log('Seite geladen - lade Subscription aus Datenbank...');
+        await loadSubscriptionForUser(user.email);
+      }
+    };
+
+    // Kurze Verzögerung um sicherzustellen, dass der User geladen ist
+    const timer = setTimeout(loadSubscriptionOnPageLoad, 100);
+    return () => clearTimeout(timer);
+  }, []); // Nur einmal beim Laden der Seite ausführen
 
   // Subscription-Status prüfen (nur wenn Subscription geladen ist)
   useEffect(() => {
@@ -275,7 +290,6 @@ function App() {
           updatedAt: now
         };
         setSubscription(freeSubscription);
-        localStorage.setItem('subscription', JSON.stringify(freeSubscription));
         
         // Optional: Supabase aktualisieren
         if (user) {
@@ -305,8 +319,7 @@ function App() {
             currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
             updatedAt: now
           };
-          setSubscription(freeSubscription);
-          localStorage.setItem('subscription', JSON.stringify(freeSubscription));
+                  setSubscription(freeSubscription);
           
           // Optional: Supabase aktualisieren
           if (user) {
@@ -493,7 +506,6 @@ function App() {
 
           // Lokalen Storage auch aktualisieren (Fallback)
           localStorage.setItem('user', JSON.stringify(newUser));
-          localStorage.setItem('subscription', JSON.stringify(newSubscription));
 
           alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
           setActiveTab('invoice');
@@ -520,7 +532,6 @@ function App() {
     setUser(null);
     setSubscription(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('subscription');
     setActiveTab('invoice');
   };
 
@@ -734,7 +745,6 @@ function App() {
                 onSelectPlan={handleSelectPlan}
                 onSubscriptionUpdate={(updatedSubscription) => {
                   setSubscription(updatedSubscription);
-                  localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
                 }}
               />
             )}

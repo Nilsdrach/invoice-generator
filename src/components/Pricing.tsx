@@ -166,7 +166,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                               }
                               
                               // Update localStorage
-                              localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
+                              
                               
                               alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${(() => {
                                 // Einheitliche Datumsberechnung: Verwende immer das ursprüngliche Ablaufdatum
@@ -285,4 +285,5 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
     </div>
   );
 };
+
 
