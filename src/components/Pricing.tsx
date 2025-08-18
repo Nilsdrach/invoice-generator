@@ -200,7 +200,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                         }
 
                       // Doppelter Code entfernt
-                    }}
+                    }
                     className="w-full px-4 py-3 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                   >
                     Abonnement kündigen
