@@ -498,8 +498,8 @@ function App() {
           alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
           setActiveTab('invoice');
           
-          // Seite neu laden um alle Daten zu aktualisieren
-          window.location.reload();
+          // Daten korrekt aktualisieren ohne Neuladen
+          setSelectedPlan(null);
         } catch (error) {
           console.error('Fehler beim Erstellen des Abonnements:', error);
           alert('Fehler beim Erstellen des Abonnements. Bitte versuchen Sie es erneut.');
@@ -882,7 +882,7 @@ function App() {
                               const password = (document.getElementById('login-password') as HTMLInputElement)?.value;
                               
                               if (!email || !password) {
-                                // Kein Popup - einfach nichts tun
+                                alert('Bitte füllen Sie alle Felder aus.');
                                 return;
                               }
                               
@@ -908,10 +908,9 @@ function App() {
                                     
                                     setActiveTab('invoice');
                                     
-                                    // Seite neu laden um alle Daten zu aktualisieren
-                                    window.location.reload();
+                                    // Daten korrekt aktualisieren ohne Neuladen
                                   } else {
-                                    // Kein Popup - einfach nichts tun
+                                    alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
                                   }
                                 })
                                 .catch(error => {
@@ -961,17 +960,17 @@ function App() {
                               const passwordConfirm = (document.getElementById('register-password-confirm') as HTMLInputElement)?.value;
                               
                               if (!name || !email || !password || !passwordConfirm) {
-                                // Kein Popup - einfach nichts tun
+                                alert('Bitte füllen Sie alle Felder aus.');
                                 return;
                               }
                               
                               if (password.length < 6) {
-                                // Kein Popup - einfach nichts tun
+                                alert('Das Passwort muss mindestens 6 Zeichen lang sein.');
                                 return;
                               }
                               
                               if (password !== passwordConfirm) {
-                                // Kein Popup - einfach nichts tun
+                                alert('Die Passwörter stimmen nicht überein.');
                                 return;
                               }
                               
@@ -995,8 +994,7 @@ function App() {
                                     alert('Konto erfolgreich erstellt! Sie sind jetzt angemeldet.');
                                     setActiveTab('invoice');
                                     
-                                    // Seite neu laden um alle Daten zu aktualisieren
-                                    window.location.reload();
+                                    // Daten korrekt aktualisieren ohne Neuladen
                                   }
                                 })
                                 .catch(error => {

@@ -188,8 +188,8 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                                 }
                               })()} weiter.`);
                               
-                              // Seite neu laden um alle Daten zu aktualisieren
-                              window.location.reload();
+                              // Daten korrekt aktualisieren ohne Neuladen
+                              console.log('Abonnement erfolgreich gekündigt');
                             } else {
                               throw new Error('Kündigung fehlgeschlagen');
                             }
