@@ -8,6 +8,7 @@ import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Invoice } from './types/invoice';
 import { SubscriptionPlan, User, Subscription, isSubscriptionActive, canCreateInvoiceWithoutWatermark } from './types/subscription';
 import { supabaseService } from './utils/supabaseService';
+import { supabase } from './utils/supabase';
 import { FileText, Download, Crown, User as UserIcon, Settings, Info } from 'lucide-react';
 
 function App() {
@@ -140,7 +141,60 @@ function App() {
     }
   }, [user, subscription]);
 
+  // Funktion zum Laden der Subscription für einen User
+  const loadSubscriptionForUser = async (email: string) => {
+    try {
+      // Versuche die Subscription aus der Datenbank zu laden
+      const dbUser = await supabaseService.getUserByEmail(email);
+      if (dbUser) {
+        // Suche nach aktiven Subscriptions für diesen User
+        const { data: subscriptions, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', dbUser.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (!error && subscriptions && subscriptions.length > 0) {
+          const dbSubscription = subscriptions[0];
+          const appSubscription: Subscription = {
+            id: dbSubscription.id,
+            userId: dbSubscription.user_id,
+            plan: dbSubscription.plan,
+            status: dbSubscription.status,
+            currentPeriodStart: new Date(dbSubscription.current_period_start),
+            currentPeriodEnd: new Date(dbSubscription.current_period_end),
+            cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
+            stripeSubscriptionId: dbSubscription.stripe_subscription_id,
+            createdAt: new Date(dbSubscription.created_at),
+            updatedAt: new Date(dbSubscription.updated_at)
+          };
+          
+          console.log('Subscription für User geladen:', appSubscription);
+          setSubscription(appSubscription);
+          localStorage.setItem('subscription', JSON.stringify(appSubscription));
+        } else {
+          // Keine aktive Subscription gefunden
+          console.log('Keine aktive Subscription für User gefunden');
+          setSubscription(null);
+          localStorage.removeItem('subscription');
+        }
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Subscription für User:', error);
+    }
+  };
+
   // Subscription-Status beim Laden der App prüfen
+  useEffect(() => {
+    // Beim App-Start: Subscription aus der Datenbank laden
+    if (user && user.email) {
+      loadSubscriptionForUser(user.email);
+    }
+  }, [user]); // Nur ausführen wenn sich der User ändert
+
+  // Subscription-Status prüfen (nur wenn Subscription geladen ist)
   useEffect(() => {
     if (subscription && (subscription.status === 'active' || subscription.cancelAtPeriodEnd)) {
       const now = new Date();
@@ -780,6 +834,10 @@ function App() {
                                     
                                     setUser(appUser);
                                     localStorage.setItem('user', JSON.stringify(appUser));
+                                    
+                                    // Nach dem Login: Subscription laden
+                                    loadSubscriptionForUser(appUser.email);
+                                    
                                     setActiveTab('invoice');
                                   } else {
                                     alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
