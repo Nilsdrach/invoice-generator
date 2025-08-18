@@ -165,7 +165,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                                 onSubscriptionUpdate(updatedSubscription);
                               }
                               
-                              // Update localStorage
+
                               
                               
                               alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${(() => {

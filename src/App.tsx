@@ -8,92 +8,69 @@ import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Invoice } from './types/invoice';
 import { SubscriptionPlan, User, Subscription, isSubscriptionActive, canCreateInvoiceWithoutWatermark } from './types/subscription';
 import { supabaseService } from './utils/supabaseService';
-import { supabase } from './utils/supabase';
 import { FileText, Download, Crown, User as UserIcon, Settings, Info } from 'lucide-react';
 
 function App() {
   // Invoice state
-  const [invoice, setInvoice] = useState<Invoice>(() => {
-    const savedInvoice = localStorage.getItem('lastInvoice');
-    if (savedInvoice) {
-      return JSON.parse(savedInvoice);
-    }
-    
-    // Standardwerte für neue Rechnung
-    return {
-      invoiceNumber: `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
-      invoiceDate: new Date().toISOString().split('T')[0],
-      deliveryDate: new Date().toISOString().split('T')[0],
-      sender: {
-        name: '',
-        address: {
-          street: '',
-          city: '',
-          country: 'Deutschland'
-        },
-        taxNumber: '',
-        vatId: '',
-        isSmallBusiness: false,
-        logo: undefined
+  const [invoice, setInvoice] = useState<Invoice>({
+    invoiceNumber: `INV-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+    invoiceDate: new Date().toISOString().split('T')[0],
+    deliveryDate: new Date().toISOString().split('T')[0],
+    sender: {
+      name: '',
+      address: {
+        street: '',
+        city: '',
+        country: 'Deutschland'
       },
-      recipient: {
-        name: '',
-        address: {
-          street: '',
-          city: '',
-          country: 'Deutschland'
-        },
-        taxNumber: '',
-        vatId: '',
-        isSmallBusiness: false,
-        logo: undefined
+      taxNumber: '',
+      vatId: '',
+      isSmallBusiness: false,
+      logo: undefined
+    },
+    recipient: {
+      name: '',
+      address: {
+        street: '',
+        city: '',
+        country: 'Deutschland'
       },
-      items: [
-        {
-          id: '1',
-          position: 1,
-          title: '',
-          description: '',
-          quantity: 1,
-          unitPrice: 0,
-          taxRate: 19,
-          total: 0
-        }
-      ],
-      subtotal: 0,
-      tax: 0,
-      total: 0,
-      paymentInfo: {
-        paymentTerms: 'Zahlbar innerhalb von 14 Tagen',
-        bankDetails: {
-          iban: '',
-          bic: '',
-          bankName: ''
-        },
-        alternativePayment: '',
-        purpose: ''
+      taxNumber: '',
+      vatId: '',
+      isSmallBusiness: false,
+      logo: undefined
+    },
+    items: [
+      {
+        id: '1',
+        position: 1,
+        title: '',
+        description: '',
+        quantity: 1,
+        unitPrice: 0,
+        taxRate: 19,
+        total: 0
+      }
+    ],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    paymentInfo: {
+      paymentTerms: 'Zahlbar innerhalb von 14 Tagen',
+      bankDetails: {
+        iban: '',
+        bic: '',
+        bankName: ''
       },
-      footerText: '',
-      language: 'de'
-    };
+      alternativePayment: '',
+      purpose: ''
+    },
+    footerText: '',
+    language: 'de'
   });
 
   // User and subscription state
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      // Datumsfelder korrekt konvertieren
-      if (parsed.createdAt) {
-        parsed.createdAt = new Date(parsed.createdAt);
-      }
-      if (parsed.updatedAt) {
-        parsed.updatedAt = new Date(parsed.updatedAt);
-      }
-      return parsed;
-    }
-    return null;
-  });
+  const [user, setUser] = useState<User | null>(null);
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
 
@@ -104,243 +81,32 @@ function App() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'invoice' | 'pricing' | 'account'>('invoice');
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  // Rechnung im LocalStorage speichern
-  useEffect(() => {
-    localStorage.setItem('lastInvoice', JSON.stringify(invoice));
-  }, [invoice]);
 
-  // User und Subscription im LocalStorage speichern
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    }
-    if (subscription) {
-      
-    }
-  }, [user, subscription]);
-
-  // Funktion zum Laden der Subscription für einen User
-  const loadSubscriptionForUser = async (email: string) => {
-    try {
-      console.log('Lade Subscription für User:', email);
-      
-      // Versuche die Subscription aus der Datenbank zu laden
-      const dbUser = await supabaseService.getUserByEmail(email);
-      if (dbUser) {
-        console.log('User gefunden:', dbUser);
-        
-        // Suche nach allen Subscriptions für diesen User (nicht nur active)
-        const { data: subscriptions, error } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', dbUser.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        console.log('Subscriptions gefunden:', subscriptions);
-        console.log('Supabase Error:', error);
-
-        if (!error && subscriptions && subscriptions.length > 0) {
-          const dbSubscription = subscriptions[0];
-          console.log('Verwende Subscription:', dbSubscription);
-          
-          // Korrektes Ablaufdatum berechnen basierend auf Plan
-          let currentPeriodEnd: Date;
-          const periodStart = new Date(dbSubscription.current_period_start);
-          
-          if (dbSubscription.plan === 'yearly') {
-            // 1 Jahr ab dem Startdatum
-            currentPeriodEnd = new Date(periodStart);
-            currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
-            currentPeriodEnd.setHours(23, 59, 59, 999); // Ende des Tages
-          } else if (dbSubscription.plan === 'monthly') {
-            // 1 Monat ab dem Startdatum
-            currentPeriodEnd = new Date(periodStart);
-            currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
-            currentPeriodEnd.setHours(23, 59, 59, 999); // Ende des Tages
-          } else {
-            currentPeriodEnd = new Date(dbSubscription.current_period_end);
-          }
-          
-          const appSubscription: Subscription = {
-            id: dbSubscription.id,
-            userId: dbSubscription.user_id,
-            plan: dbSubscription.plan,
-            status: dbSubscription.status,
-            currentPeriodStart: new Date(dbSubscription.current_period_start),
-            currentPeriodEnd: currentPeriodEnd,
-            cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
-            stripeSubscriptionId: dbSubscription.stripe_subscription_id,
-            createdAt: new Date(dbSubscription.created_at),
-            updatedAt: new Date(dbSubscription.updated_at)
-          };
-          
-          console.log('Subscription für User geladen:', appSubscription);
-          console.log('currentPeriodEnd (final):', appSubscription.currentPeriodEnd);
-          console.log('currentPeriodEnd (formatted):', appSubscription.currentPeriodEnd.toLocaleDateString('de-DE'));
-          
-          // Status korrekt setzen basierend auf Datum und cancel_at_period_end
-          if (dbSubscription.cancel_at_period_end) {
-            // Abo ist gekündigt
-            if (now > appSubscription.currentPeriodEnd) {
-              // Abo ist abgelaufen
-              appSubscription.status = 'expired';
-              appSubscription.plan = 'free';
-            } else {
-              // Abo läuft noch bis zum Ablaufdatum
-              appSubscription.status = 'active';
-            }
-          } else if (now > appSubscription.currentPeriodEnd) {
-            // Abo ist abgelaufen
-            appSubscription.status = 'expired';
-            appSubscription.plan = 'free';
-          }
-          
-          console.log('Korrigierter Status:', appSubscription.status);
-          console.log('Korrigierter Plan:', appSubscription.plan);
-          
-          // Datum in der Datenbank aktualisieren, falls es falsch ist
-          const expectedEndDate = appSubscription.currentPeriodEnd;
-          const dbEndDate = new Date(dbSubscription.current_period_end);
-          
-          if (Math.abs(expectedEndDate.getTime() - dbEndDate.getTime()) > 24 * 60 * 60 * 1000) { // Mehr als 1 Tag Unterschied
-            console.log('Datum in Datenbank wird korrigiert...');
-            console.log('DB Datum:', dbEndDate.toLocaleDateString('de-DE'));
-            console.log('Korrektes Datum:', expectedEndDate.toLocaleDateString('de-DE'));
-            
-            // In der Datenbank aktualisieren
-            await supabase
-              .from('subscriptions')
-              .update({ 
-                current_period_end: expectedEndDate.toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', dbSubscription.id);
-            
-            console.log('Datum in Datenbank korrigiert');
-          }
-          
-          setSubscription(appSubscription);
-          console.log('Subscription gesetzt');
-        } else {
-          // Keine aktive Subscription gefunden
-          console.log('Keine aktive Subscription für User gefunden');
-          setSubscription(null);
-        }
-      } else {
-        console.log('Kein User gefunden für E-Mail:', email);
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden der Subscription für User:', error);
-    }
-  };
 
   // Subscription-Status beim Laden der App prüfen
   useEffect(() => {
-    // Beim App-Start: Subscription aus der Datenbank laden
-    if (user && user.email) {
-      console.log('App startet - lade Subscription für User:', user.email);
-      loadSubscriptionForUser(user.email);
-    } else {
-      console.log('Kein User beim App-Start - keine Subscription zu laden');
-    }
-  }, [user]); // Nur ausführen wenn sich der User ändert
-
-  // Beim Laden der App: Subscription aus der Datenbank laden, falls sie im localStorage fehlt
-  useEffect(() => {
-    const loadMissingSubscription = async () => {
-      if (user && user.email && !subscription) {
-        console.log('Subscription fehlt - lade aus Datenbank...');
-        await loadSubscriptionForUser(user.email);
-      }
-    };
-
-    loadMissingSubscription();
-  }, [user, subscription]); // Ausführen wenn sich User oder Subscription ändert
-
-  // Beim Laden der Seite: Subscription aus der Datenbank laden
-  useEffect(() => {
-    const loadSubscriptionOnPageLoad = async () => {
-      if (user && user.email) {
-        console.log('Seite geladen - lade Subscription aus Datenbank...');
-        await loadSubscriptionForUser(user.email);
-      }
-    };
-
-    // Kurze Verzögerung um sicherzustellen, dass der User geladen ist
-    const timer = setTimeout(loadSubscriptionOnPageLoad, 100);
-    return () => clearTimeout(timer);
-  }, []); // Nur einmal beim Laden der Seite ausführen
-
-  // Subscription-Status prüfen (nur wenn Subscription geladen ist)
-  useEffect(() => {
-    if (subscription && (subscription.status === 'active' || subscription.cancelAtPeriodEnd)) {
+    if (subscription && subscription.status === 'active') {
       const now = new Date();
       if (now > new Date(subscription.currentPeriodEnd)) {
-        // Abonnement ist abgelaufen - automatisch zum Free Plan wechseln
-        const freeSubscription: Subscription = {
+        // Abonnement ist abgelaufen
+        const expiredSubscription: Subscription = {
           ...subscription,
-          plan: 'free',
-          status: 'active',
-          cancelAtPeriodEnd: false,
-          currentPeriodStart: now,
-          currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
+          status: 'expired',
           updatedAt: now
         };
-        setSubscription(freeSubscription);
-        
-        // Optional: Supabase aktualisieren
-        if (user) {
-          supabaseService.updateSubscription(freeSubscription.id, {
-            plan: 'free',
-            status: 'active',
-            cancel_at_period_end: false
-          }).catch(console.error);
-        }
+        setSubscription(expiredSubscription);
       }
     }
   }, []); // Nur beim ersten Laden ausführen
 
-  // Regelmäßige Prüfung des Abo-Status (alle 5 Minuten)
+  // Beim Laden der App: Subscription aus der Datenbank laden
   useEffect(() => {
-    const checkSubscriptionStatus = () => {
-      if (subscription && (subscription.status === 'active' || subscription.cancelAtPeriodEnd) && subscription.plan !== 'free') {
-        const now = new Date();
-        if (now > new Date(subscription.currentPeriodEnd)) {
-          // Abonnement ist abgelaufen - automatisch zum Free Plan wechseln
-          const freeSubscription: Subscription = {
-            ...subscription,
-            plan: 'free',
-            status: 'active',
-            cancelAtPeriodEnd: false,
-            currentPeriodStart: now,
-            currentPeriodEnd: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000), // 1 Jahr
-            updatedAt: now
-          };
-                  setSubscription(freeSubscription);
-          
-          // Optional: Supabase aktualisieren
-          if (user) {
-            supabaseService.updateSubscription(freeSubscription.id, {
-              plan: 'free',
-              status: 'active',
-              cancel_at_period_end: false
-            }).catch(console.error);
-          }
-        }
-      }
-    };
-
-    // Sofort prüfen
-    checkSubscriptionStatus();
-    
-    // Dann alle 5 Minuten prüfen
-    const interval = setInterval(checkSubscriptionStatus, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, [subscription, user]);
+    if (user && user.email) {
+      console.log('App startet - lade Subscription für User:', user.email);
+      loadSubscriptionForUser(user.email);
+    }
+  }, [user]); // Nur ausführen wenn sich der User ändert
 
   // Beim Laden der App: Abgelaufene Subscriptions in Supabase deaktivieren
   useEffect(() => {
@@ -379,20 +145,7 @@ function App() {
 
   const handleGeneratePDF = () => {
     // Prüfen ob Benutzer PDF ohne Wasserzeichen erstellen kann
-    // Wasserzeichen entfernen wenn Pro-Abo aktiv ist
-    const canCreateWithoutWatermark = (() => {
-      if (!subscription) return false;
-      
-      // Nur für Pro-Pläne (nicht free)
-      if (subscription.plan === 'free') return false;
-      
-      // Wenn das Abo aktiv ist, kann ohne Wasserzeichen erstellt werden
-      if (subscription.status === 'active' || subscription.status === 'trialing') {
-        return true;
-      }
-      
-      return false;
-    })();
+    const canCreateWithoutWatermark = canCreateInvoiceWithoutWatermark(subscription);
     
     if (!canCreateWithoutWatermark) {
       // Für kostenlose Nutzer: Zeige Modal vor der PDF-Erstellung
@@ -404,10 +157,10 @@ function App() {
     generateInvoicePDF(invoice, false);
   };
 
-  const handleSelectPlan = (planId: SubscriptionPlan) => {
-    if (planId === 'free') return; // Free Plan kann nicht ausgewählt werden
+  const handleSelectPlan = (plan: SubscriptionPlan) => {
+    if (plan === 'free') return;
     
-    setSelectedPlan(planId);
+    setSelectedPlan(plan);
     setShowPayment(true);
   };
 
@@ -476,25 +229,10 @@ function App() {
             userId: dbSubscription.user_id,
             plan: dbSubscription.plan,
             status: dbSubscription.status,
-            currentPeriodStart: dbSubscription.current_period_start ? new Date(dbSubscription.current_period_start * 1000) : new Date(),
-            currentPeriodEnd: dbSubscription.current_period_end ? new Date(dbSubscription.current_period_end * 1000) : (() => {
-              // Fallback: Korrektes Datum basierend auf Plan berechnen
-              const now = new Date();
-              if (dbSubscription.plan === 'yearly') {
-                // 1 Jahr ab jetzt
-                const oneYearLater = new Date(now);
-                oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-                return oneYearLater;
-              } else if (dbSubscription.plan === 'monthly') {
-                // 1 Monat ab jetzt
-                const oneMonthLater = new Date(now);
-                oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-                return oneMonthLater;
-              }
-              return now;
-            })(),
+            currentPeriodStart: new Date(dbSubscription.current_period_start),
+            currentPeriodEnd: new Date(dbSubscription.current_period_end),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
-            stripeSubscriptionId: stripeSubscriptionId || 'stripe_sub_' + Date.now(),
+            stripeSubscriptionId: stripeSubscriptionId || dbSubscription.stripe_subscription_id,
             createdAt: new Date(dbSubscription.created_at),
             updatedAt: new Date(dbSubscription.updated_at)
           };
@@ -504,14 +242,10 @@ function App() {
           setUser(newUser);
           setSubscription(newSubscription);
 
-          // Lokalen Storage auch aktualisieren (Fallback)
-          localStorage.setItem('user', JSON.stringify(newUser));
+
 
           alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
           setActiveTab('invoice');
-          
-          // Daten korrekt aktualisieren ohne Neuladen
-          setSelectedPlan(null);
         } catch (error) {
           console.error('Fehler beim Erstellen des Abonnements:', error);
           alert('Fehler beim Erstellen des Abonnements. Bitte versuchen Sie es erneut.');
@@ -531,7 +265,6 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setSubscription(null);
-    localStorage.removeItem('user');
     setActiveTab('invoice');
   };
 
@@ -553,35 +286,60 @@ function App() {
     generateInvoicePDF(invoice, true);
   };
 
-  // Wasserzeichen entfernen wenn Pro-Abo aktiv ist (auch wenn gekündigt aber noch läuft)
-  const canCreateWithoutWatermark = (() => {
-    if (!subscription) return false;
-    
-    // Nur für Pro-Pläne (nicht free)
-    if (subscription.plan === 'free') return false;
-    
-    // Wenn das Abo aktiv ist ODER gekündigt aber noch läuft
-    if (subscription.status === 'active' || subscription.status === 'trialing' || subscription.cancelAtPeriodEnd) {
-      return true;
+  const canCreateWithoutWatermark = canCreateInvoiceWithoutWatermark(subscription);
+  const isSubscribed = isSubscriptionActive(subscription);
+
+  // Funktion zum Laden der Subscription für einen User
+  const loadSubscriptionForUser = async (email: string) => {
+    try {
+      console.log('Lade Subscription für User:', email);
+      
+      // Versuche die Subscription aus der Datenbank zu laden
+      const dbUser = await supabaseService.getUserByEmail(email);
+      if (dbUser) {
+        console.log('User gefunden:', dbUser);
+        
+        // Suche nach allen Subscriptions für diesen User
+        const { data: subscriptions, error } = await supabaseService.supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', dbUser.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        console.log('Subscriptions gefunden:', subscriptions);
+        console.log('Supabase Error:', error);
+
+        if (!error && subscriptions && subscriptions.length > 0) {
+          const dbSubscription = subscriptions[0];
+          console.log('Verwende Subscription:', dbSubscription);
+          
+          const appSubscription: Subscription = {
+            id: dbSubscription.id,
+            userId: dbSubscription.user_id,
+            plan: dbSubscription.plan,
+            status: dbSubscription.status,
+            currentPeriodStart: new Date(dbSubscription.current_period_start),
+            currentPeriodEnd: new Date(dbSubscription.current_period_end),
+            cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
+            stripeSubscriptionId: dbSubscription.stripe_subscription_id,
+            createdAt: new Date(dbSubscription.created_at),
+            updatedAt: new Date(dbSubscription.updated_at)
+          };
+          
+          console.log('Subscription für User geladen:', appSubscription);
+          setSubscription(appSubscription);
+        } else {
+          console.log('Keine Subscription für User gefunden');
+          setSubscription(null);
+        }
+      } else {
+        console.log('Kein User gefunden für E-Mail:', email);
+      }
+    } catch (error) {
+      console.error('Fehler beim Laden der Subscription für User:', error);
     }
-    
-    return false;
-  })();
-  
-  // Pro-Zeichen anzeigen wenn Abo aktiv ist ODER gekündigt aber noch läuft
-  const isSubscribed = (() => {
-    if (!subscription) return false;
-    
-    // Nur für Pro-Pläne (nicht free)
-    if (subscription.plan === 'free') return false;
-    
-    // Wenn das Abo aktiv ist ODER gekündigt aber noch läuft
-    if (subscription.status === 'active' || subscription.status === 'trialing' || subscription.cancelAtPeriodEnd) {
-      return true;
-    }
-    
-    return false;
-  })();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -653,9 +411,20 @@ function App() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Abonnements
+              Preise & Abonnements
             </button>
-            {/* Account Tab entfernt - nur über User-Icon erreichbar */}
+            {user && (
+              <button
+                onClick={() => setActiveTab('account')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'account'
+                    ? 'border-brand-500 text-brand-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Mein Konto
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -754,7 +523,6 @@ function App() {
         {/* Account Tab */}
         {activeTab === 'account' && (
           <div className="max-w-2xl mx-auto">
-            {/* Debug-Anzeige entfernt */}
             {user ? (
               // Eingeloggter Nutzer
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -776,6 +544,12 @@ function App() {
                           <label className="block text-sm font-medium text-gray-700">E-Mail</label>
                           <p className="text-sm text-gray-900">{user.email}</p>
                         </div>
+                        {user.company && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Firma</label>
+                            <p className="text-sm text-gray-900">{user.company}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -788,20 +562,23 @@ function App() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Plan</label>
+                            <p className="text-sm text-gray-900 capitalize">{subscription.plan}</p>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Status</label>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              subscription.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {subscription.status === 'active' ? 'Aktiv' : 'Inaktiv'}
+                            </span>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Gültig bis</label>
                             <p className="text-sm text-gray-900">
-                              {subscription.plan === 'free'
-                                ? 'Free'
-                                : subscription.plan === 'monthly'
-                                ? 'Pro Monthly'
-                                : subscription.plan === 'yearly'
-                                ? 'Pro Yearly'
-                                : subscription.plan}
+                              {subscription.currentPeriodEnd.toLocaleDateString('de-DE')}
                             </p>
-                            {subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime()) && (
-                              <p className="text-xs text-gray-500">
-                                Läuft bis: {new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}
-                              </p>
-                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Wasserzeichen</label>
@@ -828,8 +605,6 @@ function App() {
                     >
                       Abmelden
                     </button>
-                    {/* Debug Button entfernt für Produktion */}
-                    {/* Test Subscription Button entfernt für Produktion */}
                   </div>
                 </div>
               </div>
@@ -846,183 +621,44 @@ function App() {
                       Melden Sie sich an oder erstellen Sie ein Konto, um Ihre Einstellungen zu verwalten.
                     </p>
                     
-                    {/* Login/Register Tabs */}
-                    <div className="max-w-sm mx-auto">
-                      <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
-                        <button
-                          onClick={() => setAuthMode('login')}
-                          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                            authMode === 'login'
-                              ? 'bg-white text-gray-900 shadow-sm'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Anmelden
-                        </button>
-                        <button
-                          onClick={() => setAuthMode('register')}
-                          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                            authMode === 'register'
-                              ? 'bg-white text-gray-900 shadow-sm'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          Registrieren
-                        </button>
-                      </div>
-                      
-                      {/* Login Form */}
-                      {authMode === 'login' && (
-                        <div className="space-y-4">
-                          <input
-                            type="email"
-                            id="login-email"
-                            placeholder="E-Mail-Adresse"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                          />
-                          <input
-                            type="password"
-                            id="login-password"
-                            placeholder="Passwort"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                          />
-                          <button
-                            onClick={() => {
-                              const email = (document.getElementById('login-email') as HTMLInputElement)?.value;
-                              const password = (document.getElementById('login-password') as HTMLInputElement)?.value;
-                              
-                              if (!email || !password) {
-                                alert('Bitte füllen Sie alle Felder aus.');
-                                return;
-                              }
-                              
-                              // Echter Login über Supabase
-                              supabaseService.loginUser(email, password)
-                                .then(user => {
-                                  if (user) {
-                                    // Login erfolgreich
-                                    const appUser: User = {
-                                      id: user.id,
-                                      email: user.email,
-                                      name: user.name,
-                                      password: user.password,
-                                      createdAt: new Date(user.created_at),
-                                      updatedAt: new Date(user.updated_at)
-                                    };
-                                    
-                                    setUser(appUser);
-                                    localStorage.setItem('user', JSON.stringify(appUser));
-                                    
-                                    // Nach dem Login: Subscription laden
-                                    loadSubscriptionForUser(appUser.email);
-                                    
-                                    setActiveTab('invoice');
-                                    
-                                    // Daten korrekt aktualisieren ohne Neuladen
-                                  } else {
-                                    alert('E-Mail oder Passwort falsch. Falls Sie noch kein Konto haben, registrieren Sie sich bitte.');
-                                  }
-                                })
-                                .catch(error => {
-                                  console.error('Login-Fehler:', error);
-                                  alert('Fehler beim Login. Bitte versuchen Sie es erneut.');
-                                });
-                            }}
-                            className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-                          >
-                            Anmelden
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Register Form */}
-                      {authMode === 'register' && (
-                        <div className="space-y-4">
-                          <input
-                            type="text"
-                            id="register-name"
-                            placeholder="Vollständiger Name"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                          />
-                          <input
-                            type="email"
-                            id="register-email"
-                            placeholder="E-Mail-Adresse"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                          />
-                          <input
-                            type="password"
-                            id="register-password"
-                            placeholder="Passwort (mindestens 6 Zeichen)"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                          />
-                          <input
-                            type="password"
-                            id="register-password-confirm"
-                            placeholder="Passwort bestätigen"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                          />
-                          <button
-                            onClick={() => {
-                              const name = (document.getElementById('register-name') as HTMLInputElement)?.value;
-                              const email = (document.getElementById('register-email') as HTMLInputElement)?.value;
-                              const password = (document.getElementById('register-password') as HTMLInputElement)?.value;
-                              const passwordConfirm = (document.getElementById('register-password-confirm') as HTMLInputElement)?.value;
-                              
-                              if (!name || !email || !password || !passwordConfirm) {
-                                alert('Bitte füllen Sie alle Felder aus.');
-                                return;
-                              }
-                              
-                              if (password.length < 6) {
-                                alert('Das Passwort muss mindestens 6 Zeichen lang sein.');
-                                return;
-                              }
-                              
-                              if (password !== passwordConfirm) {
-                                alert('Die Passwörter stimmen nicht überein.');
-                                return;
-                              }
-                              
-                              // Neuen User über Supabase erstellen
-                              supabaseService.registerUser(email, name, password)
-                                .then(user => {
-                                  if (user) {
-                                    // Registrierung erfolgreich
-                                    const appUser: User = {
-                                      id: user.id,
-                                      email: user.email,
-                                      name: user.name,
-                                      password: user.password,
-                                      createdAt: new Date(user.created_at),
-                                      updatedAt: new Date(user.updated_at)
-                                    };
-                                    
-                                    setUser(appUser);
-                                    localStorage.setItem('user', JSON.stringify(appUser));
-                                    
-                                    alert('Konto erfolgreich erstellt! Sie sind jetzt angemeldet.');
-                                    setActiveTab('invoice');
-                                    
-                                    // Daten korrekt aktualisieren ohne Neuladen
-                                  }
-                                })
-                                .catch(error => {
-                                  console.error('Registrierungsfehler:', error);
-                                  if (error.message.includes('existiert bereits')) {
-                                    alert('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an.');
-                                    setAuthMode('login');
-                                  } else {
-                                    alert('Fehler bei der Registrierung. Bitte versuchen Sie es erneut.');
-                                  }
-                                });
-                            }}
-                            className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-                          >
-                            Konto erstellen
-                          </button>
-                        </div>
-                      )}
+                    {/* Einfaches Login-Formular */}
+                    <div className="max-w-sm mx-auto space-y-4">
+                      <input
+                        type="email"
+                        placeholder="E-Mail-Adresse"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={() => {
+                          // Einfacher Login ohne Abo
+                          const email = document.querySelector('input[type="email"]') as HTMLInputElement;
+                          const name = document.querySelector('input[type="text"]') as HTMLInputElement;
+                          
+                          if (email?.value && name?.value) {
+                            // User erstellen/anmelden
+                            const newUser: User = {
+                              id: Date.now().toString(),
+                              email: email.value,
+                              name: name.value,
+                              createdAt: new Date(),
+                              updatedAt: new Date()
+                            };
+                            
+                                                         setUser(newUser);
+                            
+                            // Zurück zum Invoice-Tab
+                            setActiveTab('invoice');
+                          }
+                        }}
+                        className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                      >
+                        Anmelden / Registrieren
+                      </button>
                     </div>
                     
                     <div className="mt-4 text-center">
@@ -1064,20 +700,16 @@ function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <StripePayment
-                selectedPlan={selectedPlan}
-                onPaymentSuccess={handlePaymentSuccess}
-                onCancel={handlePaymentCancel}
-                isLoading={isPaymentLoading}
-              />
+                          <StripePayment
+              selectedPlan={selectedPlan}
+              onPaymentSuccess={handlePaymentSuccess}
+              onCancel={handlePaymentCancel}
+              isLoading={isPaymentLoading}
+            />
             </div>
           </div>
         </div>
       )}
-
-      {/* Test-Buttons entfernt - Account Tab nur über User-Icon erreichbar */}
-
-      
     </div>
   );
 }
