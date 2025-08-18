@@ -126,23 +126,9 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                       }
 
                         if (confirm(`Möchten Sie Ihr ${plan.id === 'monthly' ? 'monatliches' : 'jährliches'} Abonnement wirklich kündigen? Es läuft bis zum ${(() => {
+                          // Einheitliche Datumsberechnung: Verwende immer das ursprüngliche Ablaufdatum
                           if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
-                            const endDate = new Date(subscription.currentPeriodEnd);
-                            // Prüfen ob das Datum korrekt ist
-                            const now = new Date();
-                            const expectedEndDate = new Date();
-                            if (subscription.plan === 'yearly') {
-                              expectedEndDate.setFullYear(expectedEndDate.getFullYear() + 1);
-                            } else if (subscription.plan === 'monthly') {
-                              expectedEndDate.setMonth(expectedEndDate.getMonth() + 1);
-                            }
-                            
-                            // Falls das Datum mehr als 1 Tag abweicht, das erwartete Datum verwenden
-                            if (Math.abs(endDate.getTime() - expectedEndDate.getTime()) > 24 * 60 * 60 * 1000) {
-                              return expectedEndDate.toLocaleDateString('de-DE');
-                            }
-                            
-                            return endDate.toLocaleDateString('de-DE');
+                            return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
                           } else {
                             // Fallback: Datum basierend auf Plan berechnen
                             const now = new Date();
@@ -201,23 +187,9 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                               localStorage.setItem('subscription', JSON.stringify(updatedSubscription));
                               
                               alert(`Ihr Abonnement wurde erfolgreich gekündigt und läuft bis zum ${(() => {
+                                // Einheitliche Datumsberechnung: Verwende immer das ursprüngliche Ablaufdatum
                                 if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
-                                  const endDate = new Date(subscription.currentPeriodEnd);
-                                  // Prüfen ob das Datum korrekt ist
-                                  const now = new Date();
-                                  const expectedEndDate = new Date();
-                                  if (subscription.plan === 'yearly') {
-                                    expectedEndDate.setFullYear(expectedEndDate.getFullYear() + 1);
-                                  } else if (subscription.plan === 'monthly') {
-                                    expectedEndDate.setMonth(expectedEndDate.getMonth() + 1);
-                                  }
-                                  
-                                  // Falls das Datum mehr als 1 Tag abweicht, das erwartete Datum verwenden
-                                  if (Math.abs(endDate.getTime() - expectedEndDate.getTime()) > 24 * 60 * 60 * 1000) {
-                                    return expectedEndDate.toLocaleDateString('de-DE');
-                                  }
-                                  
-                                  return endDate.toLocaleDateString('de-DE');
+                                  return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
                                 } else {
                                   // Fallback: Datum basierend auf Plan berechnen
                                   const now = new Date();
@@ -278,23 +250,9 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                     'Aktuell aktiv'
                   ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
                     `Abonnement läuft am ${(() => {
+                      // Einheitliche Datumsberechnung: Verwende immer das ursprüngliche Ablaufdatum
                       if (subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime())) {
-                        const endDate = new Date(subscription.currentPeriodEnd);
-                        // Prüfen ob das Datum korrekt ist
-                        const now = new Date();
-                        const expectedEndDate = new Date();
-                        if (subscription.plan === 'yearly') {
-                          expectedEndDate.setFullYear(expectedEndDate.getFullYear() + 1);
-                        } else if (subscription.plan === 'monthly') {
-                          expectedEndDate.setMonth(expectedEndDate.getMonth() + 1);
-                        }
-                        
-                        // Falls das Datum mehr als 1 Tag abweicht, das erwartete Datum verwenden
-                        if (Math.abs(endDate.getTime() - expectedEndDate.getTime()) > 24 * 60 * 60 * 1000) {
-                          return expectedEndDate.toLocaleDateString('de-DE');
-                        }
-                        
-                        return endDate.toLocaleDateString('de-DE');
+                        return new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE');
                       } else {
                         // Fallback: Datum basierend auf Plan berechnen
                         const now = new Date();
