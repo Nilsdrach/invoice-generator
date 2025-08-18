@@ -158,6 +158,12 @@ function App() {
 
         if (!error && subscriptions && subscriptions.length > 0) {
           const dbSubscription = subscriptions[0];
+          
+          // Debug: Alle Daten anzeigen
+          console.log('Raw Subscription aus Datenbank:', dbSubscription);
+          console.log('current_period_end (raw):', dbSubscription.current_period_end);
+          console.log('current_period_end (Date):', new Date(dbSubscription.current_period_end));
+          
           const appSubscription: Subscription = {
             id: dbSubscription.id,
             userId: dbSubscription.user_id,
@@ -172,6 +178,38 @@ function App() {
           };
           
           console.log('Subscription für User geladen:', appSubscription);
+          console.log('currentPeriodEnd (final):', appSubscription.currentPeriodEnd);
+          console.log('currentPeriodEnd (formatted):', appSubscription.currentPeriodEnd.toLocaleDateString('de-DE'));
+          
+          // Prüfen ob das Datum korrekt ist
+          const now = new Date();
+          const expectedEndDate = new Date();
+          if (dbSubscription.plan === 'yearly') {
+            expectedEndDate.setFullYear(expectedEndDate.getFullYear() + 1);
+          } else if (dbSubscription.plan === 'monthly') {
+            expectedEndDate.setMonth(expectedEndDate.getMonth() + 1);
+          }
+          
+          console.log('Erwartetes Ablaufdatum:', expectedEndDate.toLocaleDateString('de-DE'));
+          console.log('Ist das Datum korrekt?', appSubscription.currentPeriodEnd.getTime() === expectedEndDate.getTime());
+          
+          // Falls das Datum falsch ist, korrigieren
+          if (Math.abs(appSubscription.currentPeriodEnd.getTime() - expectedEndDate.getTime()) > 24 * 60 * 60 * 1000) { // Mehr als 1 Tag Unterschied
+            console.log('Datum wird korrigiert...');
+            appSubscription.currentPeriodEnd = expectedEndDate;
+            
+            // In der Datenbank aktualisieren
+            await supabase
+              .from('subscriptions')
+              .update({ 
+                current_period_end: expectedEndDate.toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', dbSubscription.id);
+            
+            console.log('Datum in Datenbank korrigiert');
+          }
+          
           setSubscription(appSubscription);
           localStorage.setItem('subscription', JSON.stringify(appSubscription));
         } else {
