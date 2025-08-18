@@ -13,7 +13,12 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
   const isCurrentPlan = (planId: SubscriptionPlan): boolean => {
     if (planId === 'free') return !subscription || subscription.plan === 'free';
     if (!subscription) return false;
-    return subscription.plan === planId && subscription.status === 'active';
+    
+    // Ein Plan ist aktuell wenn:
+    // 1. Es ist der richtige Plan UND
+    // 2. Das Abo läuft noch (status active/trialing ODER gekündigt aber noch laufend)
+    return subscription.plan === planId && 
+           (subscription.status === 'active' || subscription.status === 'trialing' || subscription.cancelAtPeriodEnd);
   };
 
   const handleSelectPlan = (plan: PricingPlan) => {
@@ -94,7 +99,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   plan.id === 'free' 
                     ? 'bg-green-100 text-green-700 border border-green-300'
                     : subscription.cancelAtPeriodEnd 
-                    ? 'bg-orange-100 text-orange-700 border border-orange-300' 
+                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' 
                     : 'bg-gray-100 text-gray-500'
                 }`}>
                   <Check className="w-4 h-4" />
@@ -180,9 +185,11 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   </button>
                 ) : (
                   // Für gekündigte Abos: Zeige Info-Text
-                  <div className="text-center text-sm text-orange-600 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
-                    Abonnement läuft bis zum Ablaufdatum weiter
-                  </div>
+                  subscription && subscription.cancelAtPeriodEnd ? (
+                    <div className="text-center text-sm text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-200">
+                      Abonnement läuft bis zum Ablaufdatum weiter
+                    </div>
+                  ) : null
                 )}
               </div>
             ) : (
@@ -194,7 +201,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   plan.id === 'free'
                     ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
                     : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd
-                    ? 'bg-orange-100 text-orange-700 cursor-not-allowed'
+                    ? 'bg-yellow-100 text-yellow-700 cursor-not-allowed'
                     : plan.popular
                     ? 'bg-brand-500 text-white hover:bg-brand-600'
                     : 'bg-gray-900 text-white hover:bg-gray-800'
@@ -204,6 +211,8 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                   'Aktuell aktiv'
                 ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
                   ''
+                ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
+                  `Abonnement läuft am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} ab`
                 ) : isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

@@ -113,7 +113,7 @@ function App() {
 
   // Subscription-Status beim Laden der App prüfen
   useEffect(() => {
-    if (subscription && subscription.status === 'active') {
+    if (subscription && (subscription.status === 'active' || subscription.cancelAtPeriodEnd)) {
       const now = new Date();
       if (now > new Date(subscription.currentPeriodEnd)) {
         // Abonnement ist abgelaufen - automatisch zum Free Plan wechseln
@@ -144,7 +144,7 @@ function App() {
   // Regelmäßige Prüfung des Abo-Status (alle 5 Minuten)
   useEffect(() => {
     const checkSubscriptionStatus = () => {
-      if (subscription && subscription.status === 'active' && subscription.plan !== 'free') {
+      if (subscription && (subscription.status === 'active' || subscription.cancelAtPeriodEnd) && subscription.plan !== 'free') {
         const now = new Date();
         if (now > new Date(subscription.currentPeriodEnd)) {
           // Abonnement ist abgelaufen - automatisch zum Free Plan wechseln
@@ -383,8 +383,8 @@ function App() {
     // Nur für Pro-Pläne (nicht free)
     if (subscription.plan === 'free') return false;
     
-    // Wenn das Abo aktiv ist, kann ohne Wasserzeichen erstellt werden
-    if (subscription.status === 'active' || subscription.status === 'trialing') {
+    // Wenn das Abo aktiv ist ODER gekündigt aber noch läuft
+    if (subscription.status === 'active' || subscription.status === 'trialing' || subscription.cancelAtPeriodEnd) {
       return true;
     }
     
@@ -395,8 +395,11 @@ function App() {
   const isSubscribed = (() => {
     if (!subscription) return false;
     
-    // Wenn das Abo aktiv ist, zeige Pro
-    if (subscription.status === 'active' || subscription.status === 'trialing') {
+    // Nur für Pro-Pläne (nicht free)
+    if (subscription.plan === 'free') return false;
+    
+    // Wenn das Abo aktiv ist ODER gekündigt aber noch läuft
+    if (subscription.status === 'active' || subscription.status === 'trialing' || subscription.cancelAtPeriodEnd) {
       return true;
     }
     
