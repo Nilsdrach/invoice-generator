@@ -344,8 +344,17 @@ function App() {
             userId: dbSubscription.user_id,
             plan: dbSubscription.plan,
             status: dbSubscription.status,
-            currentPeriodStart: new Date(dbSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(dbSubscription.current_period_end * 1000),
+            currentPeriodStart: dbSubscription.current_period_start ? new Date(dbSubscription.current_period_start * 1000) : new Date(),
+            currentPeriodEnd: dbSubscription.current_period_end ? new Date(dbSubscription.current_period_end * 1000) : (() => {
+              // Fallback: 1 Jahr ab jetzt für yearly, 1 Monat für monthly
+              const now = new Date();
+              if (dbSubscription.plan === 'yearly') {
+                return new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+              } else if (dbSubscription.plan === 'monthly') {
+                return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+              }
+              return now;
+            })(),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
             stripeSubscriptionId: stripeSubscriptionId || 'stripe_sub_' + Date.now(),
             createdAt: new Date(dbSubscription.created_at),
@@ -642,23 +651,19 @@ function App() {
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Plan</label>
                             <p className="text-sm text-gray-900">
-                              {subscription.plan === 'free' 
-                                ? 'Free' 
-                                : subscription.plan === 'monthly' 
-                                ? 'Pro Monthly' 
-                                : subscription.plan === 'yearly' 
-                                ? 'Pro Yearly' 
+                              {subscription.plan === 'free'
+                                ? 'Free'
+                                : subscription.plan === 'monthly'
+                                ? 'Pro Monthly'
+                                : subscription.plan === 'yearly'
+                                ? 'Pro Yearly'
                                 : subscription.plan}
                             </p>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Gültig bis</label>
-                            <p className="text-sm text-gray-900">
-                              {subscription.currentPeriodEnd instanceof Date 
-                                ? subscription.currentPeriodEnd.toLocaleDateString('de-DE')
-                                : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')
-                              }
-                            </p>
+                            {subscription.currentPeriodEnd && !isNaN(new Date(subscription.currentPeriodEnd).getTime()) && (
+                              <p className="text-xs text-gray-500">
+                                Läuft bis: {new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700">Wasserzeichen</label>
