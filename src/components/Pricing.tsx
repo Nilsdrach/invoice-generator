@@ -190,38 +190,43 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                 )}
               </div>
             ) : (
-              // Nicht aktueller Plan - Zeige Aktionsbutton
-              <button
-                onClick={() => handleSelectPlan(plan)}
-                disabled={isLoading || plan.id === 'free' || (isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd)}
-                className={`w-full py-3 px-4 rounded-lg font-medium text-sm sm:text-base transition-colors ${
-                  plan.id === 'free'
-                    ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
-                    : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd
-                    ? 'bg-yellow-100 text-yellow-700 cursor-not-allowed'
-                    : plan.popular
-                    ? 'bg-brand-500 text-white hover:bg-brand-600'
-                    : 'bg-gray-900 text-white hover:bg-gray-800'
-                }`}
-              >
-                {plan.id === 'free' && (!subscription || subscription.plan === 'free') ? (
-                  'Aktuell aktiv'
-                ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
-                  'Aktuell aktiv'
-                ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
-                  `Abonnement läuft am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} ab`
-                ) : isLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Wird geladen...
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    Abonnement starten
-                  </div>
-                )}
-              </button>
+              // Nicht aktueller Plan - Zeige Aktionsbutton (aber nicht für kostenlosen Plan wenn User ein Abo hat)
+              plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
+                // Kein Button für kostenlosen Plan wenn User ein Abo hat
+                null
+              ) : (
+                <button
+                  onClick={() => handleSelectPlan(plan)}
+                  disabled={isLoading || plan.id === 'free' || (isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd)}
+                  className={`w-full py-3 px-4 rounded-lg font-medium text-sm sm:text-base transition-colors ${
+                    plan.id === 'free'
+                      ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
+                      : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd
+                      ? 'bg-yellow-100 text-yellow-700 cursor-not-allowed'
+                      : plan.popular
+                      ? 'bg-brand-500 text-white hover:bg-brand-600'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
+                >
+                  {plan.id === 'free' && (!subscription || subscription.plan === 'free') ? (
+                    'Aktuell aktiv'
+                  ) : plan.id === 'free' && subscription && subscription.plan !== 'free' ? (
+                    'Aktuell aktiv'
+                  ) : isCurrentPlan(plan.id) && subscription && subscription.cancelAtPeriodEnd ? (
+                    `Abonnement läuft am ${subscription.currentPeriodEnd instanceof Date ? subscription.currentPeriodEnd.toLocaleDateString('de-DE') : new Date(subscription.currentPeriodEnd).toLocaleDateString('de-DE')} ab`
+                  ) : isLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Wird geladen...
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Abonnement starten
+                    </div>
+                  )}
+                </button>
+              )
             )}
           </div>
         ))}

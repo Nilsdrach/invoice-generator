@@ -80,12 +80,40 @@ function App() {
   // User and subscription state
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      // Datumsfelder korrekt konvertieren
+      if (parsed.createdAt) {
+        parsed.createdAt = new Date(parsed.createdAt);
+      }
+      if (parsed.updatedAt) {
+        parsed.updatedAt = new Date(parsed.updatedAt);
+      }
+      return parsed;
+    }
+    return null;
   });
 
   const [subscription, setSubscription] = useState<Subscription | null>(() => {
     const savedSubscription = localStorage.getItem('subscription');
-    return savedSubscription ? JSON.parse(savedSubscription) : null;
+    if (savedSubscription) {
+      const parsed = JSON.parse(savedSubscription);
+      // Datumsfelder korrekt konvertieren
+      if (parsed.currentPeriodStart) {
+        parsed.currentPeriodStart = new Date(parsed.currentPeriodStart);
+      }
+      if (parsed.currentPeriodEnd) {
+        parsed.currentPeriodEnd = new Date(parsed.currentPeriodEnd);
+      }
+      if (parsed.createdAt) {
+        parsed.createdAt = new Date(parsed.createdAt);
+      }
+      if (parsed.updatedAt) {
+        parsed.updatedAt = new Date(parsed.updatedAt);
+      }
+      return parsed;
+    }
+    return null;
   });
 
   // UI state
@@ -316,8 +344,8 @@ function App() {
             userId: dbSubscription.user_id,
             plan: dbSubscription.plan,
             status: dbSubscription.status,
-            currentPeriodStart: new Date(dbSubscription.current_period_start),
-            currentPeriodEnd: new Date(dbSubscription.current_period_end),
+            currentPeriodStart: new Date(dbSubscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(dbSubscription.current_period_end * 1000),
             cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
             stripeSubscriptionId: stripeSubscriptionId || 'stripe_sub_' + Date.now(),
             createdAt: new Date(dbSubscription.created_at),
