@@ -1,10 +1,21 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { createClient } = require('@supabase/supabase-js');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_...');
 
-// Supabase Client initialisieren
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Supabase Client initialisieren (nur wenn die Variablen gesetzt sind)
+let supabase = null;
+try {
+  const { createClient } = require('@supabase/supabase-js');
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (supabaseUrl && supabaseServiceKey) {
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('Supabase Client initialisiert');
+  } else {
+    console.log('Supabase Environment-Variablen nicht gesetzt');
+  }
+} catch (error) {
+  console.error('Fehler beim Initialisieren von Supabase:', error);
+}
 
 exports.handler = async (event, context) => {
   // CORS headers
@@ -71,9 +82,10 @@ exports.handler = async (event, context) => {
 
     console.log('Subscription cancelled successfully:', cancelledSubscription.id);
 
-    // Wichtig: Subscription auch in der lokalen Datenbank aktualisieren
-    if (userId) {
+    // Wichtig: Subscription auch in der lokalen Datenbank aktualisieren (nur wenn Supabase verfügbar ist)
+    if (userId && supabase) {
       try {
+        console.log('Versuche Datenbank-Update...');
         const { data: updatedSubscription, error: dbError } = await supabase
           .from('subscriptions')
           .update({
@@ -93,6 +105,8 @@ exports.handler = async (event, context) => {
       } catch (dbError) {
         console.error('Fehler beim Aktualisieren der Datenbank:', dbError);
       }
+    } else if (!supabase) {
+      console.log('Supabase nicht verfügbar, überspringe Datenbank-Update');
     }
 
     return {
