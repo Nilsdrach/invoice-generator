@@ -1,4 +1,10 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createClient } = require('@supabase/supabase-js');
+
+// Supabase Client initialisieren
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 exports.handler = async (event, context) => {
   // CORS headers
@@ -26,7 +32,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { subscriptionId } = JSON.parse(event.body);
+    const { subscriptionId, userId } = JSON.parse(event.body);
 
     if (!subscriptionId) {
       return {
@@ -64,6 +70,30 @@ exports.handler = async (event, context) => {
     });
 
     console.log('Subscription cancelled successfully:', cancelledSubscription.id);
+
+    // Wichtig: Subscription auch in der lokalen Datenbank aktualisieren
+    if (userId) {
+      try {
+        const { data: updatedSubscription, error: dbError } = await supabase
+          .from('subscriptions')
+          .update({
+            cancel_at_period_end: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('stripe_subscription_id', subscriptionId)
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error('Fehler beim Aktualisieren der Datenbank:', dbError);
+        } else {
+          console.log('Subscription in Datenbank aktualisiert:', updatedSubscription);
+        }
+      } catch (dbError) {
+        console.error('Fehler beim Aktualisieren der Datenbank:', dbError);
+      }
+    }
 
     return {
       statusCode: 200,

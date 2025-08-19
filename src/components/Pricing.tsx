@@ -136,7 +136,8 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                                 'Content-Type': 'application/json',
                               },
                               body: JSON.stringify({
-                                subscriptionId: subscription.stripeSubscriptionId
+                                subscriptionId: subscription.stripeSubscriptionId,
+                                userId: subscription.userId
                               })
                             });
 
@@ -165,28 +166,7 @@ export const Pricing: React.FC<PricingProps> = ({ subscription, isLoading, onSel
                                 onSubscriptionUpdate(updatedSubscription);
                               }
 
-                              // Wichtig: Subscription auch in der Datenbank aktualisieren
-                              try {
-                                const response = await fetch('/.netlify/functions/update-subscription', {
-                                  method: 'POST',
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                  },
-                                  body: JSON.stringify({
-                                    subscriptionId: subscription.id,
-                                    cancelAtPeriodEnd: true,
-                                    status: 'active' // Bleibt aktiv bis zum Ablaufdatum
-                                  })
-                                });
 
-                                if (response.ok) {
-                                  console.log('Subscription in Datenbank aktualisiert');
-                                } else {
-                                  console.error('Fehler beim Aktualisieren der Datenbank');
-                                }
-                              } catch (error) {
-                                console.error('Fehler beim Aktualisieren der Datenbank:', error);
-                              }
                               
 
                               
