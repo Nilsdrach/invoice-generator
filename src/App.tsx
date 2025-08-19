@@ -278,7 +278,8 @@ function App() {
           setUser(newUser);
           setSubscription(newSubscription);
 
-
+          // E-Mail in sessionStorage speichern für Reload
+          sessionStorage.setItem('lastUserEmail', newUser.email);
 
           alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
           setActiveTab('invoice');
