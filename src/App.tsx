@@ -113,8 +113,16 @@ function App() {
           console.log('Lade User aus Session:', lastUserEmail);
           const dbUser = await supabaseService.getUserByEmail(lastUserEmail);
           if (dbUser) {
-            setUser(dbUser);
-            console.log('User erfolgreich geladen:', dbUser);
+            // DatabaseUser zu User konvertieren
+            const user: User = {
+              id: dbUser.id,
+              email: dbUser.email,
+              name: dbUser.name,
+              createdAt: new Date(dbUser.created_at),
+              updatedAt: new Date(dbUser.updated_at)
+            };
+            setUser(user);
+            console.log('User erfolgreich geladen:', user);
           } else {
             console.log('User nicht in Datenbank gefunden, entferne Session');
             sessionStorage.removeItem('lastUserEmail');
@@ -688,8 +696,16 @@ function App() {
                           
                           if (email?.value && password?.value) {
                             try {
-                              const user = await supabaseService.loginUser(email.value, password.value);
-                              if (user) {
+                              const dbUser = await supabaseService.loginUser(email.value, password.value);
+                              if (dbUser) {
+                                // DatabaseUser zu User konvertieren
+                                const user: User = {
+                                  id: dbUser.id,
+                                  email: dbUser.email,
+                                  name: dbUser.name,
+                                  createdAt: new Date(dbUser.created_at),
+                                  updatedAt: new Date(dbUser.updated_at)
+                                };
                                 setUser(user);
                                 // E-Mail in sessionStorage speichern für Reload
                                 sessionStorage.setItem('lastUserEmail', user.email);
@@ -738,11 +754,19 @@ function App() {
                           
                           if (email?.value && name?.value && password?.value) {
                             try {
-                              const newUser = await supabaseService.registerUser(email.value, password.value, name.value);
-                              if (newUser) {
-                                setUser(newUser);
+                              const dbUser = await supabaseService.registerUser(email.value, name.value, password.value);
+                              if (dbUser) {
+                                // DatabaseUser zu User konvertieren
+                                const user: User = {
+                                  id: dbUser.id,
+                                  email: dbUser.email,
+                                  name: dbUser.name,
+                                  createdAt: new Date(dbUser.created_at),
+                                  updatedAt: new Date(dbUser.updated_at)
+                                };
+                                setUser(user);
                                 // E-Mail in sessionStorage speichern für Reload
-                                sessionStorage.setItem('lastUserEmail', newUser.email);
+                                sessionStorage.setItem('lastUserEmail', user.email);
                                 setActiveTab('invoice');
                               }
                             } catch (error) {
