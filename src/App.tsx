@@ -751,9 +751,14 @@ function App() {
                           const email = document.getElementById('login-email') as HTMLInputElement;
                           const password = document.getElementById('login-password') as HTMLInputElement;
                           
+                          console.log('Login-Versuch mit:', { email: email?.value, password: password?.value });
+                          
                           if (email?.value && password?.value) {
                             try {
+                              console.log('Rufe supabaseService.loginUser auf...');
                               const dbUser = await supabaseService.loginUser(email.value, password.value);
+                              console.log('Login-Ergebnis:', dbUser);
+                              
                               if (dbUser) {
                                 // DatabaseUser zu User konvertieren
                                 const user: User = {
@@ -763,15 +768,21 @@ function App() {
                                   createdAt: new Date(dbUser.created_at),
                                   updatedAt: new Date(dbUser.updated_at)
                                 };
+                                console.log('User konvertiert:', user);
                                 setUser(user);
                                 // E-Mail in sessionStorage speichern für Reload
                                 sessionStorage.setItem('lastUserEmail', user.email);
                                 setActiveTab('invoice');
+                              } else {
+                                console.log('Kein User zurückgegeben');
+                                alert('E-Mail oder Passwort falsch. Bitte überprüfen Sie Ihre Anmeldedaten.');
                               }
                             } catch (error) {
                               console.error('Fehler beim Login:', error);
                               alert('Fehler beim Login. Bitte überprüfen Sie Ihre Anmeldedaten.');
                             }
+                          } else {
+                            alert('Bitte füllen Sie alle Felder aus.');
                           }
                         }}
                         className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"

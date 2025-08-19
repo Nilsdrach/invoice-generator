@@ -40,15 +40,31 @@ export const supabaseService = {
   // User anmelden
   async loginUser(email: string, password: string): Promise<DatabaseUser | null> {
     try {
+      // Erst nach E-Mail suchen
       const { data: user, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
-        .eq('password', password)
         .single();
 
-      if (error) throw error;
-      return user;
+      if (error) {
+        console.error('Fehler beim Suchen des Users:', error);
+        return null;
+      }
+
+      if (!user) {
+        console.log('Kein User mit dieser E-Mail gefunden');
+        return null;
+      }
+
+      // Dann Passwort überprüfen
+      if (user.password === password) {
+        console.log('Passwort korrekt, User wird zurückgegeben');
+        return user;
+      } else {
+        console.log('Passwort falsch');
+        return null;
+      }
     } catch (error) {
       console.error('Fehler beim Login des Users:', error);
       return null;
