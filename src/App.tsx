@@ -81,6 +81,7 @@ function App() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'invoice' | 'pricing' | 'account'>('invoice');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
 
 
@@ -609,19 +610,74 @@ function App() {
                 </div>
               </div>
             ) : (
-              // Nicht eingeloggter Nutzer - Login/Register
+              // Nicht eingeloggter Nutzer - Login/Register Tabs
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
-                  Anmelden oder Registrieren
-                </h2>
-                
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <p className="text-gray-600 mb-4">
-                      Melden Sie sich an oder erstellen Sie ein Konto, um Ihre Einstellungen zu verwalten.
-                    </p>
-                    
-                    {/* Einfaches Login-Formular */}
+                <div className="flex mb-6">
+                  <button
+                    onClick={() => setAuthMode('login')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium rounded-l-lg transition-colors ${
+                      authMode === 'login'
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Anmelden
+                  </button>
+                  <button
+                    onClick={() => setAuthMode('register')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium rounded-r-lg transition-colors ${
+                      authMode === 'register'
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Registrieren
+                  </button>
+                </div>
+
+                {authMode === 'login' ? (
+                  // Login Formular
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 text-center">Anmelden</h2>
+                    <div className="max-w-sm mx-auto space-y-4">
+                      <input
+                        type="email"
+                        placeholder="E-Mail-Adresse"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                      <input
+                        type="password"
+                        placeholder="Passwort"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={async () => {
+                          const email = document.querySelector('input[type="email"]') as HTMLInputElement;
+                          const password = document.querySelector('input[type="password"]') as HTMLInputElement;
+                          
+                          if (email?.value && password?.value) {
+                            try {
+                              const user = await supabaseService.loginUser(email.value, password.value);
+                              if (user) {
+                                setUser(user);
+                                setActiveTab('invoice');
+                              }
+                            } catch (error) {
+                              console.error('Fehler beim Login:', error);
+                              alert('Fehler beim Login. Bitte überprüfen Sie Ihre Anmeldedaten.');
+                            }
+                          }
+                        }}
+                        className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
+                      >
+                        Anmelden
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // Registrieren Formular
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 text-center">Registrieren</h2>
                     <div className="max-w-sm mx-auto space-y-4">
                       <input
                         type="email"
@@ -633,43 +689,45 @@ function App() {
                         placeholder="Name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
+                      <input
+                        type="password"
+                        placeholder="Passwort"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
                       <button
-                        onClick={() => {
-                          // Einfacher Login ohne Abo
+                        onClick={async () => {
                           const email = document.querySelector('input[type="email"]') as HTMLInputElement;
                           const name = document.querySelector('input[type="text"]') as HTMLInputElement;
+                          const password = document.querySelector('input[type="password"]') as HTMLInputElement;
                           
-                          if (email?.value && name?.value) {
-                            // User erstellen/anmelden
-                            const newUser: User = {
-                              id: Date.now().toString(),
-                              email: email.value,
-                              name: name.value,
-                              createdAt: new Date(),
-                              updatedAt: new Date()
-                            };
-                            
-                                                         setUser(newUser);
-                            
-                            // Zurück zum Invoice-Tab
-                            setActiveTab('invoice');
+                          if (email?.value && name?.value && password?.value) {
+                            try {
+                              const newUser = await supabaseService.registerUser(email.value, password.value, name.value);
+                              if (newUser) {
+                                setUser(newUser);
+                                setActiveTab('invoice');
+                              }
+                            } catch (error) {
+                              console.error('Fehler bei der Registrierung:', error);
+                              alert('Fehler bei der Registrierung. Bitte versuchen Sie es erneut.');
+                            }
                           }
                         }}
                         className="w-full px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
                       >
-                        Anmelden / Registrieren
-                      </button>
-                    </div>
-                    
-                    <div className="mt-4 text-center">
-                      <button
-                        onClick={() => setActiveTab('pricing')}
-                        className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-                      >
-                        Oder direkt zu den Abonnements
+                        Registrieren
                       </button>
                     </div>
                   </div>
+                )}
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => setActiveTab('pricing')}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    Oder direkt zu den Abonnements
+                  </button>
                 </div>
               </div>
             )}
