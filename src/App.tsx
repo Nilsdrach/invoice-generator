@@ -144,12 +144,12 @@ function App() {
     }
   }, [user]); // Nur ausführen wenn sich der User ändert
 
-  // Beim Laden der App: Subscription aus der Datenbank laden (auch wenn User bereits geladen ist)
+  // Beim Laden der App: User und Subscription direkt aus der Datenbank laden
   useEffect(() => {
-    const loadSubscriptionOnAppStart = async () => {
+    const loadUserAndSubscriptionOnAppStart = async () => {
       const lastUserEmail = sessionStorage.getItem('lastUserEmail');
-      if (lastUserEmail && !user) {
-        console.log('App startet - lade User und Subscription aus Session:', lastUserEmail);
+      if (lastUserEmail) {
+        console.log('App startet - lade User und Subscription direkt:', lastUserEmail);
         try {
           const dbUser = await supabaseService.getUserByEmail(lastUserEmail);
           if (dbUser) {
@@ -161,15 +161,40 @@ function App() {
               updatedAt: new Date(dbUser.updated_at)
             };
             setUser(user);
-            // Subscription wird automatisch durch den anderen useEffect geladen
+            
+            // Direkt die Subscription laden
+            const { data: subscriptions, error } = await supabaseService.supabase
+              .from('subscriptions')
+              .select('*')
+              .eq('user_id', dbUser.id)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (!error && subscriptions && subscriptions.length > 0) {
+              const dbSubscription = subscriptions[0];
+              const subscription: Subscription = {
+                id: dbSubscription.id,
+                userId: dbSubscription.user_id,
+                plan: dbSubscription.plan,
+                status: dbSubscription.status,
+                currentPeriodStart: new Date(dbSubscription.current_period_start),
+                currentPeriodEnd: new Date(dbSubscription.current_period_end),
+                cancelAtPeriodEnd: dbSubscription.cancel_at_period_end,
+                stripeSubscriptionId: dbSubscription.stripe_subscription_id,
+                createdAt: new Date(dbSubscription.created_at),
+                updatedAt: new Date(dbSubscription.updated_at)
+              };
+              setSubscription(subscription);
+              console.log('Subscription direkt geladen:', subscription);
+            }
           }
         } catch (error) {
-          console.error('Fehler beim Laden des Users beim App-Start:', error);
+          console.error('Fehler beim Laden von User und Subscription:', error);
         }
       }
     };
 
-    loadSubscriptionOnAppStart();
+    loadUserAndSubscriptionOnAppStart();
   }, []); // Nur beim ersten Laden ausführen
 
   // Beim Laden der App: Abgelaufene Subscriptions in Supabase deaktivieren
@@ -309,7 +334,33 @@ function App() {
           // E-Mail in sessionStorage speichern für Reload
           sessionStorage.setItem('lastUserEmail', newUser.email);
 
-          alert('Abonnement erfolgreich erstellt! Sie haben jetzt Pro-Features!');
+          // Direkt die Subscription aus der Datenbank neu laden um sicherzustellen dass sie da ist
+          const { data: freshSubscriptions, error: subError } = await supabaseService.supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', dbUser.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!subError && freshSubscriptions && freshSubscriptions.length > 0) {
+            const freshSubscription = freshSubscriptions[0];
+            const updatedSubscription: Subscription = {
+              id: freshSubscription.id,
+              userId: freshSubscription.user_id,
+              plan: freshSubscription.plan,
+              status: freshSubscription.status,
+              currentPeriodStart: new Date(freshSubscription.current_period_start),
+              currentPeriodEnd: new Date(freshSubscription.current_period_end),
+              cancelAtPeriodEnd: freshSubscription.cancel_at_period_end,
+              stripeSubscriptionId: freshSubscription.stripe_subscription_id,
+              createdAt: new Date(freshSubscription.created_at),
+              updatedAt: new Date(freshSubscription.updated_at)
+            };
+            setSubscription(updatedSubscription);
+            console.log('Subscription nach Kauf neu geladen:', updatedSubscription);
+          }
+
+          // Kein Popup - direkt zum Invoice-Tab und Pro-Features aktivieren
           setActiveTab('invoice');
         } catch (error) {
           console.error('Fehler beim Erstellen des Abonnements:', error);
