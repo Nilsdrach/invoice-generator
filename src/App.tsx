@@ -8,6 +8,7 @@ import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Invoice } from './types/invoice';
 import { SubscriptionPlan, User, Subscription, isSubscriptionActive, canCreateInvoiceWithoutWatermark } from './types/subscription';
 import { supabaseService } from './utils/supabaseService';
+import { supabase } from './utils/supabase';
 import { FileText, Download, Crown, User as UserIcon, Settings, Info } from 'lucide-react';
 
 function App() {
@@ -163,7 +164,7 @@ function App() {
             setUser(user);
             
             // Direkt die Subscription laden
-            const { data: subscriptions, error } = await supabaseService.supabase
+            const { data: subscriptions, error } = await supabase
               .from('subscriptions')
               .select('*')
               .eq('user_id', dbUser.id)
@@ -334,31 +335,7 @@ function App() {
           // E-Mail in sessionStorage speichern für Reload
           sessionStorage.setItem('lastUserEmail', newUser.email);
 
-          // Direkt die Subscription aus der Datenbank neu laden um sicherzustellen dass sie da ist
-          const { data: freshSubscriptions, error: subError } = await supabaseService.supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('user_id', dbUser.id)
-            .order('created_at', { ascending: false })
-            .limit(1);
 
-          if (!subError && freshSubscriptions && freshSubscriptions.length > 0) {
-            const freshSubscription = freshSubscriptions[0];
-            const updatedSubscription: Subscription = {
-              id: freshSubscription.id,
-              userId: freshSubscription.user_id,
-              plan: freshSubscription.plan,
-              status: freshSubscription.status,
-              currentPeriodStart: new Date(freshSubscription.current_period_start),
-              currentPeriodEnd: new Date(freshSubscription.current_period_end),
-              cancelAtPeriodEnd: freshSubscription.cancel_at_period_end,
-              stripeSubscriptionId: freshSubscription.stripe_subscription_id,
-              createdAt: new Date(freshSubscription.created_at),
-              updatedAt: new Date(freshSubscription.updated_at)
-            };
-            setSubscription(updatedSubscription);
-            console.log('Subscription nach Kauf neu geladen:', updatedSubscription);
-          }
 
           // Kein Popup - direkt zum Invoice-Tab und Pro-Features aktivieren
           setActiveTab('invoice');
