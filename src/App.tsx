@@ -144,6 +144,34 @@ function App() {
     }
   }, [user]); // Nur ausführen wenn sich der User ändert
 
+  // Beim Laden der App: Subscription aus der Datenbank laden (auch wenn User bereits geladen ist)
+  useEffect(() => {
+    const loadSubscriptionOnAppStart = async () => {
+      const lastUserEmail = sessionStorage.getItem('lastUserEmail');
+      if (lastUserEmail && !user) {
+        console.log('App startet - lade User und Subscription aus Session:', lastUserEmail);
+        try {
+          const dbUser = await supabaseService.getUserByEmail(lastUserEmail);
+          if (dbUser) {
+            const user: User = {
+              id: dbUser.id,
+              email: dbUser.email,
+              name: dbUser.name,
+              createdAt: new Date(dbUser.created_at),
+              updatedAt: new Date(dbUser.updated_at)
+            };
+            setUser(user);
+            // Subscription wird automatisch durch den anderen useEffect geladen
+          }
+        } catch (error) {
+          console.error('Fehler beim Laden des Users beim App-Start:', error);
+        }
+      }
+    };
+
+    loadSubscriptionOnAppStart();
+  }, []); // Nur beim ersten Laden ausführen
+
   // Beim Laden der App: Abgelaufene Subscriptions in Supabase deaktivieren
   useEffect(() => {
     const cleanupExpiredSubscriptions = async () => {
