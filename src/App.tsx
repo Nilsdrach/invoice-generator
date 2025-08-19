@@ -101,6 +101,33 @@ function App() {
     }
   }, []); // Nur beim ersten Laden ausführen
 
+  // Beim Laden der App: User aus der Datenbank laden (falls vorhanden)
+  useEffect(() => {
+    const loadUserFromDatabase = async () => {
+      try {
+        // Versuche den letzten angemeldeten User aus der Datenbank zu laden
+        // Wir speichern die E-Mail in sessionStorage als einfache Session
+        const lastUserEmail = sessionStorage.getItem('lastUserEmail');
+        
+        if (lastUserEmail) {
+          console.log('Lade User aus Session:', lastUserEmail);
+          const dbUser = await supabaseService.getUserByEmail(lastUserEmail);
+          if (dbUser) {
+            setUser(dbUser);
+            console.log('User erfolgreich geladen:', dbUser);
+          } else {
+            console.log('User nicht in Datenbank gefunden, entferne Session');
+            sessionStorage.removeItem('lastUserEmail');
+          }
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden des Users aus der Datenbank:', error);
+      }
+    };
+
+    loadUserFromDatabase();
+  }, []); // Nur beim ersten Laden ausführen
+
   // Beim Laden der App: Subscription aus der Datenbank laden
   useEffect(() => {
     if (user && user.email) {
@@ -266,6 +293,8 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setSubscription(null);
+    // Session löschen
+    sessionStorage.removeItem('lastUserEmail');
     setActiveTab('invoice');
   };
 
@@ -641,25 +670,29 @@ function App() {
                     <h2 className="text-xl font-bold text-gray-900 text-center">Anmelden</h2>
                     <div className="max-w-sm mx-auto space-y-4">
                       <input
+                        id="login-email"
                         type="email"
                         placeholder="E-Mail-Adresse"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
                       <input
+                        id="login-password"
                         type="password"
                         placeholder="Passwort"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
                       <button
                         onClick={async () => {
-                          const email = document.querySelector('input[type="email"]') as HTMLInputElement;
-                          const password = document.querySelector('input[type="password"]') as HTMLInputElement;
+                          const email = document.getElementById('login-email') as HTMLInputElement;
+                          const password = document.getElementById('login-password') as HTMLInputElement;
                           
                           if (email?.value && password?.value) {
                             try {
                               const user = await supabaseService.loginUser(email.value, password.value);
                               if (user) {
                                 setUser(user);
+                                // E-Mail in sessionStorage speichern für Reload
+                                sessionStorage.setItem('lastUserEmail', user.email);
                                 setActiveTab('invoice');
                               }
                             } catch (error) {
@@ -680,31 +713,36 @@ function App() {
                     <h2 className="text-xl font-bold text-gray-900 text-center">Registrieren</h2>
                     <div className="max-w-sm mx-auto space-y-4">
                       <input
+                        id="register-email"
                         type="email"
                         placeholder="E-Mail-Adresse"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
                       <input
+                        id="register-name"
                         type="text"
                         placeholder="Name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
                       <input
+                        id="register-password"
                         type="password"
                         placeholder="Passwort"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                       />
                       <button
                         onClick={async () => {
-                          const email = document.querySelector('input[type="email"]') as HTMLInputElement;
-                          const name = document.querySelector('input[type="text"]') as HTMLInputElement;
-                          const password = document.querySelector('input[type="password"]') as HTMLInputElement;
+                          const email = document.getElementById('register-email') as HTMLInputElement;
+                          const name = document.getElementById('register-name') as HTMLInputElement;
+                          const password = document.getElementById('register-password') as HTMLInputElement;
                           
                           if (email?.value && name?.value && password?.value) {
                             try {
                               const newUser = await supabaseService.registerUser(email.value, password.value, name.value);
                               if (newUser) {
                                 setUser(newUser);
+                                // E-Mail in sessionStorage speichern für Reload
+                                sessionStorage.setItem('lastUserEmail', newUser.email);
                                 setActiveTab('invoice');
                               }
                             } catch (error) {
