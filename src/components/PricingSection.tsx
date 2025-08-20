@@ -10,7 +10,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
       id: 'monthly',
       priceId: 'price_1RyCOYBdLY4NC8JCurzQBMrU',
       name: 'Pro Monthly',
-      price: '9,99€',
+      price: '7,99€',
       interval: '/Monat',
       features: [
         'Unbegrenzte Rechnungen',
@@ -23,7 +23,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
       id: 'yearly',
       priceId: 'price_1RyCOYBdLY4NC8JCt6kjhty8',
       name: 'Pro Yearly',
-      price: '99,99€',
+      price: '79,99€',
       interval: '/Jahr',
       popular: true,
              features: [
@@ -114,6 +114,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
             PayPal
+          </div>
+          <div className="flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+            Giropay
           </div>
           <div className="flex items-center gap-1">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

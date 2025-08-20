@@ -53,7 +53,7 @@ exports.handler = async (event, context) => {
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'paypal', 'link'],
+      payment_method_types: ['card', 'paypal', 'giropay', 'link'],
       line_items: [
         {
           price: priceId,
