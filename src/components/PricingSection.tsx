@@ -8,7 +8,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
   const plans = [
     {
       id: 'monthly',
-      priceId: 'price_1RyCOYBdLY4NC8JCurzQBMrU',
+      priceId: 'price_1RyCOYBdLY4NC8JCt6kjhty8',
       name: 'Pro Monthly',
       price: '7,99€',
       interval: '/Monat',
@@ -21,7 +21,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
     },
     {
       id: 'yearly',
-      priceId: 'price_1RyCOYBdLY4NC8JCt6kjhty8',
+      priceId: 'price_1RyCOYBdLY4NC8JCurzQBMrU',
       name: 'Pro Yearly',
       price: '79,99€',
       interval: '/Jahr',

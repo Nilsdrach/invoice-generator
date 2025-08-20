@@ -26,8 +26,16 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Function started with event:', {
+      httpMethod: event.httpMethod,
+      path: event.path,
+      body: event.body,
+      headers: event.headers
+    });
+
     // Check if Stripe key is available
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
       console.error('STRIPE_SECRET_KEY not set');
       return {
         statusCode: 500,
@@ -39,10 +47,14 @@ exports.handler = async (event, context) => {
       };
     }
 
+    console.log('Stripe key found, length:', stripeKey.length);
+    console.log('Stripe key starts with:', stripeKey.substring(0, 7));
+
     // Parse request body safely
     let requestBody;
     try {
       requestBody = JSON.parse(event.body);
+      console.log('Request body parsed successfully:', requestBody);
     } catch (parseError) {
       console.error('Failed to parse request body:', parseError);
       return {
@@ -58,6 +70,7 @@ exports.handler = async (event, context) => {
     const { priceId, successUrl, cancelUrl } = requestBody;
 
     if (!priceId) {
+      console.error('Price ID missing from request');
       return {
         statusCode: 400,
         headers,
@@ -69,6 +82,7 @@ exports.handler = async (event, context) => {
 
     // Validate price ID format
     if (!priceId.startsWith('price_')) {
+      console.error('Invalid price ID format:', priceId);
       return {
         statusCode: 400,
         headers,
@@ -79,7 +93,26 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Test Stripe connection first
+    try {
+      console.log('Testing Stripe connection...');
+      const testAccount = await stripe.accounts.retrieve();
+      console.log('Stripe connection successful, account:', testAccount.id);
+    } catch (stripeError) {
+      console.error('Stripe connection test failed:', stripeError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Stripe connection failed',
+          details: stripeError.message,
+          type: stripeError.type || 'unknown'
+        })
+      };
+    }
+
     // Create Stripe Checkout Session
+    console.log('Creating Stripe checkout session...');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card', 'paypal', 'giropay', 'link'],
       line_items: [
@@ -108,6 +141,7 @@ exports.handler = async (event, context) => {
 
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    console.error('Error stack:', error.stack);
     
     // Provide more specific error messages
     let errorMessage = 'Failed to create checkout session';
@@ -119,6 +153,10 @@ exports.handler = async (event, context) => {
       errorMessage = 'Ungültige Anfrage';
     } else if (error.type === 'StripeAPIError') {
       errorMessage = 'Stripe API Fehler';
+    } else if (error.type === 'StripeAuthenticationError') {
+      errorMessage = 'Stripe Authentifizierungsfehler';
+    } else if (error.type === 'StripePermissionError') {
+      errorMessage = 'Stripe Berechtigungsfehler';
     }
     
     return {
@@ -127,7 +165,8 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ 
         error: errorMessage,
         details: errorDetails,
-        type: error.type || 'unknown'
+        type: error.type || 'unknown',
+        stack: error.stack
       })
     };
   }
