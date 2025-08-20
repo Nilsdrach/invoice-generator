@@ -39,7 +39,23 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const { priceId, successUrl, cancelUrl } = JSON.parse(event.body);
+    // Parse request body safely
+    let requestBody;
+    try {
+      requestBody = JSON.parse(event.body);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Invalid JSON in request body',
+          details: parseError.message 
+        })
+      };
+    }
+
+    const { priceId, successUrl, cancelUrl } = requestBody;
 
     if (!priceId) {
       return {
@@ -50,6 +66,18 @@ exports.handler = async (event, context) => {
     }
 
     console.log('Creating checkout session with:', { priceId, successUrl, cancelUrl });
+
+    // Validate price ID format
+    if (!priceId.startsWith('price_')) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Invalid price ID format',
+          details: 'Price ID must start with "price_"'
+        })
+      };
+    }
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -67,7 +95,7 @@ exports.handler = async (event, context) => {
       payment_method_collection: 'always',
     });
 
-    console.log('Checkout session created:', session.id);
+    console.log('Checkout session created successfully:', session.id);
 
     return {
       statusCode: 200,
@@ -81,12 +109,25 @@ exports.handler = async (event, context) => {
   } catch (error) {
     console.error('Error creating checkout session:', error);
     
+    // Provide more specific error messages
+    let errorMessage = 'Failed to create checkout session';
+    let errorDetails = error.message;
+    
+    if (error.type === 'StripeCardError') {
+      errorMessage = 'Kreditkartenfehler';
+    } else if (error.type === 'StripeInvalidRequestError') {
+      errorMessage = 'Ungültige Anfrage';
+    } else if (error.type === 'StripeAPIError') {
+      errorMessage = 'Stripe API Fehler';
+    }
+    
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
-        error: 'Failed to create checkout session',
-        details: error.message 
+        error: errorMessage,
+        details: errorDetails,
+        type: error.type || 'unknown'
       })
     };
   }

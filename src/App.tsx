@@ -112,10 +112,19 @@ function App() {
         })
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Server error:', errorData);
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errorData = await response.json();
+          console.error('Server error details:', errorData);
+          errorMessage = errorData.error || errorData.details || errorMessage;
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError);
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -129,7 +138,19 @@ function App() {
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      alert(`Fehler beim Erstellen der Checkout-Session: ${error.message}. Bitte versuchen Sie es erneut.`);
+      
+      let userMessage = 'Fehler beim Erstellen der Checkout-Session';
+      if (error.message.includes('Stripe configuration missing')) {
+        userMessage = 'Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Support.';
+      } else if (error.message.includes('Invalid price ID')) {
+        userMessage = 'Ungültiger Preis. Bitte wählen Sie einen anderen Plan.';
+      } else if (error.message.includes('HTTP 500')) {
+        userMessage = 'Server-Fehler. Bitte versuchen Sie es später erneut.';
+      } else {
+        userMessage = `${userMessage}: ${error.message}`;
+      }
+      
+      alert(userMessage);
     }
   };
 
