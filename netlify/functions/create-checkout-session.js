@@ -114,7 +114,7 @@ exports.handler = async (event, context) => {
     // Create Stripe Checkout Session
     console.log('Creating Stripe checkout session...');
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'paypal', 'giropay', 'link'],
+      payment_method_types: ['card', 'paypal', 'link'],
       line_items: [
         {
           price: priceId,
