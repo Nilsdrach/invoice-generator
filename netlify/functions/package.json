@@ -1,8 +1,9 @@
 {
   "name": "netlify-functions",
   "version": "1.0.0",
+  "description": "Netlify Functions for Invoice Generator",
+  "main": "index.js",
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0",
     "stripe": "^14.21.0"
   }
 }
