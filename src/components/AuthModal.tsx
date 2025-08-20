@@ -4,7 +4,8 @@ import { X } from 'lucide-react';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (email: string, name: string) => void;
+  onLogin: (email: string, password: string) => void;
+  onRegister: (email: string, name: string, password: string) => void;
   mode: 'login' | 'register';
   onModeChange: (mode: 'login' | 'register') => void;
 }
@@ -13,18 +14,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   onLogin,
+  onRegister,
   mode,
   onModeChange
 }) => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() && name.trim()) {
-      onLogin(email.trim(), name.trim());
-      setEmail('');
-      setName('');
+    if (mode === 'login') {
+      if (email.trim() && password.trim()) {
+        onLogin(email.trim(), password.trim());
+        setEmail('');
+        setPassword('');
+      }
+    } else {
+      if (email.trim() && name.trim() && password.trim()) {
+        onRegister(email.trim(), name.trim(), password.trim());
+        setEmail('');
+        setName('');
+        setPassword('');
+      }
     }
   };
 
@@ -61,17 +73,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             />
           </div>
 
+          {mode === 'register' && (
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ihr vollständiger Name"
+                required={mode === 'register'}
+              />
+            </div>
+          )}
+
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Name
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Passwort
             </label>
             <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ihr vollständiger Name"
+              placeholder="Ihr Passwort"
               required
             />
           </div>

@@ -5,7 +5,7 @@ import { PricingSection } from './components/PricingSection';
 import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Invoice } from './types/invoice';
 import { FileText, Download, Crown, User, LogOut } from 'lucide-react';
-import { supabase, upsertUser, getUserByEmail, setUserProStatus } from './utils/supabaseService';
+import { supabase, registerUser, loginUser, getUserByEmail, setUserProStatus } from './utils/supabaseService';
 import { AuthModal } from './components/AuthModal';
 
 function App() {
@@ -107,10 +107,10 @@ function App() {
     alert('Pro-Status zurückgesetzt. Für Tests verwenden.');
   };
 
-  const handleLogin = async (email: string, name: string) => {
+  const handleLogin = async (email: string, password: string) => {
     try {
-      // User in Datenbank erstellen oder aktualisieren
-      const user = await upsertUser(email, name);
+      // User anmelden
+      const user = await loginUser(email, password);
       
       // Pro-Status laden
       if (user.isPro) {
@@ -127,6 +127,27 @@ function App() {
     } catch (error) {
       console.error('Login error:', error);
       alert('Fehler beim Login: ' + error.message);
+    }
+  };
+
+  const handleRegister = async (email: string, name: string, password: string) => {
+    try {
+      // User registrieren
+      const user = await registerUser(email, name, password);
+      
+      // Automatisch anmelden nach Registrierung
+      setCurrentUser({ email: user.email, name: user.name });
+      setShowAuthModal(false);
+      
+      // User-Info in sessionStorage speichern
+      sessionStorage.setItem('userEmail', user.email);
+      sessionStorage.setItem('userName', user.name);
+      
+      alert('Registrierung erfolgreich! Sie sind jetzt angemeldet.');
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Fehler bei der Registrierung: ' + error.message);
     }
   };
 
@@ -403,6 +424,7 @@ function App() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onLogin={handleLogin}
+        onRegister={handleRegister}
         mode={authMode}
         onModeChange={setAuthMode}
       />

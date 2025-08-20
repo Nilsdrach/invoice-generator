@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  password: string;
   isPro: boolean;
   proExpiresAt?: string;
   createdAt: string;
@@ -22,28 +23,46 @@ export interface ProSubscription {
   updatedAt: string;
 }
 
-// User erstellen oder aktualisieren
-export const upsertUser = async (email: string, name: string): Promise<User> => {
+// User registrieren
+export const registerUser = async (email: string, name: string, password: string): Promise<User> => {
+  // Passwort hashen (einfache Implementierung - in Produktion bcrypt verwenden)
+  const hashedPassword = btoa(password); // Base64 encoding (nur für Demo)
+
   const { data, error } = await supabase
     .from('users')
-    .upsert(
-      { 
-        email, 
-        name, 
-        isPro: false,
-        updatedAt: new Date().toISOString()
-      },
-      { 
-        onConflict: 'email',
-        ignoreDuplicates: false
-      }
-    )
+    .insert({
+      email,
+      name,
+      password: hashedPassword,
+      isPro: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    })
     .select()
     .single();
 
   if (error) {
-    console.error('Error upserting user:', error);
-    throw new Error('Fehler beim Erstellen/Aktualisieren des Benutzers');
+    console.error('Error registering user:', error);
+    throw new Error('Fehler bei der Registrierung');
+  }
+
+  return data;
+};
+
+// User anmelden
+export const loginUser = async (email: string, password: string): Promise<User> => {
+  const hashedPassword = btoa(password);
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .eq('password', hashedPassword)
+    .single();
+
+  if (error || !data) {
+    console.error('Error logging in user:', error);
+    throw new Error('E-Mail oder Passwort falsch');
   }
 
   return data;
