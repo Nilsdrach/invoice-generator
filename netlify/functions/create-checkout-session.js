@@ -67,7 +67,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const { priceId, successUrl, cancelUrl } = requestBody;
+    const { priceId, successUrl, cancelUrl, userEmail } = requestBody;
 
     if (!priceId) {
       console.error('Price ID missing from request');
@@ -122,10 +122,13 @@ exports.handler = async (event, context) => {
         },
       ],
       mode: 'subscription',
-      success_url: successUrl || `${process.env.URL || 'http://localhost:8888'}?success=true`,
+      success_url: successUrl || `${process.env.URL || 'http://localhost:8888'}?success=true&email=${encodeURIComponent(userEmail || '')}`,
       cancel_url: cancelUrl || `${process.env.URL || 'http://localhost:8888'}?canceled=true`,
       allow_promotion_codes: true,
       payment_method_collection: 'always',
+      metadata: {
+        userEmail: userEmail || ''
+      }
     });
 
     console.log('Checkout session created successfully:', session.id);

@@ -2,9 +2,10 @@ import React from 'react';
 
 interface PricingSectionProps {
   onSelectPlan: (priceId: string) => void;
+  isLoggedIn: boolean;
 }
 
-export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) => {
+export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan, isLoggedIn }) => {
   const plans = [
     {
       id: 'monthly',
@@ -34,6 +35,22 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectPlan }) 
        ]
     }
   ];
+
+  if (!isLoggedIn) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Pro Features freischalten
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Bitte melden Sie sich an, um Pro Features zu buchen.
+        </p>
+        <div className="text-sm text-gray-500">
+          Sie müssen sich mit Ihrer E-Mail-Adresse anmelden, damit wir Ihnen die Pro Features zuordnen können.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

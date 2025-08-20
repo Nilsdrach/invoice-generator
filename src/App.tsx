@@ -4,7 +4,9 @@ import { InvoicePreview } from './components/InvoicePreview';
 import { PricingSection } from './components/PricingSection';
 import { generateInvoicePDF } from './utils/pdfGenerator';
 import { Invoice } from './types/invoice';
-import { FileText, Download, Crown } from 'lucide-react';
+import { FileText, Download, Crown, User, LogOut } from 'lucide-react';
+import { supabase, upsertUser, getUserByEmail, setUserProStatus } from './utils/supabaseService';
+import { AuthModal } from './components/AuthModal';
 
 function App() {
   // Invoice state
@@ -68,6 +70,9 @@ function App() {
   // UI state
   const [activeTab, setActiveTab] = useState<'invoice' | 'pricing'>('invoice');
   const [isPro, setIsPro] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ email: string; name: string } | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   // Totale neu berechnen wenn sich Items ändern
   useEffect(() => {
@@ -96,7 +101,50 @@ function App() {
     generateInvoicePDF(invoice, !isPro);
   };
 
+  const resetProStatus = () => {
+    setIsPro(false);
+    sessionStorage.removeItem('isPro');
+    alert('Pro-Status zurückgesetzt. Für Tests verwenden.');
+  };
+
+  const handleLogin = async (email: string, name: string) => {
+    try {
+      // User in Datenbank erstellen oder aktualisieren
+      const user = await upsertUser(email, name);
+      
+      // Pro-Status laden
+      if (user.isPro) {
+        setIsPro(true);
+      }
+      
+      setCurrentUser({ email: user.email, name: user.name });
+      setShowAuthModal(false);
+      
+      // User-Info in sessionStorage speichern
+      sessionStorage.setItem('userEmail', user.email);
+      sessionStorage.setItem('userName', user.name);
+      
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Fehler beim Login: ' + error.message);
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setIsPro(false);
+    sessionStorage.removeItem('userEmail');
+    sessionStorage.removeItem('userName');
+    sessionStorage.removeItem('isPro');
+  };
+
   const handleSelectPlan = async (priceId: string) => {
+    if (!currentUser) {
+      alert('Bitte melden Sie sich zuerst an.');
+      setShowAuthModal(true);
+      return;
+    }
+
     try {
       console.log('Creating checkout session for price:', priceId);
       
@@ -107,6 +155,7 @@ function App() {
         },
         body: JSON.stringify({
           priceId,
+          userEmail: currentUser.email,
           successUrl: `${window.location.origin}?success=true`,
           cancelUrl: `${window.location.origin}?canceled=true`
         })
@@ -154,15 +203,56 @@ function App() {
     }
   };
 
+  // Load user status and Pro status on app start
+  useEffect(() => {
+    const loadUserStatus = async () => {
+      try {
+        // Load user info from sessionStorage
+        const savedEmail = sessionStorage.getItem('userEmail');
+        const savedName = sessionStorage.getItem('userName');
+        
+        if (savedEmail && savedName) {
+          // User is logged in, load Pro status from database
+          const user = await getUserByEmail(savedEmail);
+          if (user) {
+            setCurrentUser({ email: user.email, name: user.name });
+            setIsPro(user.isPro);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user status:', error);
+      }
+    };
+
+    loadUserStatus();
+  }, []);
+
   // Check for payment success in URL
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
-      setIsPro(true);
-      setActiveTab('invoice');
-      // Remove success parameter from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      alert('Zahlung erfolgreich! Pro-Features sind jetzt aktiviert.');
+      // Payment successful, update Pro status in database
+      const userEmail = urlParams.get('email') || sessionStorage.getItem('userEmail');
+      if (userEmail) {
+        setUserProStatus(userEmail, true)
+          .then(() => {
+            setIsPro(true);
+            setActiveTab('invoice');
+            // Remove success parameter from URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            alert('Zahlung erfolgreich! Pro-Features sind jetzt aktiviert.');
+          })
+          .catch(error => {
+            console.error('Error updating Pro status:', error);
+            alert('Zahlung erfolgreich, aber Fehler beim Aktivieren der Pro-Features. Bitte kontaktieren Sie den Support.');
+          });
+      } else {
+        // No user logged in, just set local state
+        setIsPro(true);
+        setActiveTab('invoice');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert('Zahlung erfolgreich! Pro-Features sind jetzt aktiviert.');
+      }
     }
   }, []);
 
@@ -178,9 +268,18 @@ function App() {
                 Invoice Generator
               </h1>
               {isPro && (
-                <div className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
-                  <Crown className="w-3 h-3" />
-                  Pro
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
+                    <Crown className="w-3 h-3" />
+                    Pro
+                  </div>
+                  <button
+                    onClick={resetProStatus}
+                    className="text-xs text-gray-500 hover:text-red-500 transition-colors"
+                    title="Pro-Status zurücksetzen (nur für Tests)"
+                  >
+                    Reset
+                  </button>
                 </div>
               )}
             </div>
@@ -207,6 +306,32 @@ function App() {
                   Pro Features
                 </button>
               </nav>
+              
+              {/* User Authentication */}
+              {currentUser ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <User className="w-4 h-4" />
+                    <span>{currentUser.name}</span>
+                    <span className="text-gray-500">({currentUser.email})</span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-600 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Abmelden
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  Anmelden
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -268,10 +393,19 @@ function App() {
         {/* Pricing Tab */}
         {activeTab === 'pricing' && (
           <div className="max-w-4xl mx-auto">
-            <PricingSection onSelectPlan={handleSelectPlan} />
+            <PricingSection onSelectPlan={handleSelectPlan} isLoggedIn={!!currentUser} />
           </div>
         )}
        </main>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onLogin={handleLogin}
+        mode={authMode}
+        onModeChange={setAuthMode}
+      />
     </div>
   );
 }
