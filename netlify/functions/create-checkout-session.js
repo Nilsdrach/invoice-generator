@@ -53,7 +53,7 @@ exports.handler = async (event, context) => {
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'paypal', 'link'],
       line_items: [
         {
           price: priceId,
@@ -64,6 +64,7 @@ exports.handler = async (event, context) => {
       success_url: successUrl || `${process.env.URL || 'http://localhost:8888'}?success=true`,
       cancel_url: cancelUrl || `${process.env.URL || 'http://localhost:8888'}?canceled=true`,
       allow_promotion_codes: true,
+      payment_method_collection: 'always',
     });
 
     console.log('Checkout session created:', session.id);
